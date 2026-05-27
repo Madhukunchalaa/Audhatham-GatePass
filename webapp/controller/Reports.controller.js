@@ -1,4 +1,4 @@
-sap.ui.define([
+﻿sap.ui.define([
 	"./BaseController",
 	"sap/ui/model/Filter",
 	"sap/ui/model/FilterOperator",
@@ -6,7 +6,7 @@ sap.ui.define([
 ], function (BaseController, Filter, FilterOperator, MessageToast) {
 	"use strict";
 
-	return BaseController.extend("zgpms.meilpower.com.controller.Reports", {
+	return BaseController.extend("zaudgpms.audhatham.com.controller.Reports", {
 
 		onInit: function () {
 			this.getRouter().getRoute("reports").attachPatternMatched(this._onRouteMatched, this);
@@ -47,7 +47,7 @@ sap.ui.define([
 		onItemPress: function (oEvent) {
 			var oItem = oEvent.getSource();
 			var sReqNo = oItem.getBindingContext().getProperty("GatePassReqNo");
-			
+
 			// For now, navigate to Out Gate Pass and set the request number?
 			// Or just show a toast
 			MessageToast.show("Viewing details for " + sReqNo);

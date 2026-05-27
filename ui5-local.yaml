@@ -1,8 +1,8 @@
-# yaml-language-server: $schema=https://sap.github.io/ui5-tooling/schema/ui5.yaml.json
+﻿# yaml-language-server: $schema=https://sap.github.io/ui5-tooling/schema/ui5.yaml.json
 
 specVersion: "4.0"
 metadata:
-  name: gpms.meilpower.com.zgpms
+  name: gpms.audhatham.com.zgpms
 type: application
 framework:
   name: SAPUI5
@@ -31,5 +31,5 @@ server:
         ignoreCertErrors: true # If set to true, certificate errors will be ignored. E.g. self-signed certificates will be accepted
         backend:
           - path: /sap
-            url: https://sapasd.meilpower.com
+            url: https://sapasd.audhatham.com
             client: '300'

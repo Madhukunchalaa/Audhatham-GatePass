@@ -1,15 +1,15 @@
-<mvc:View
-    controllerName="zgpms.meilpower.com.controller.GatePassList"
+﻿<mvc:View
+    controllerName="zaudgpms.audhatham.com.controller.GatePassList"
     xmlns="sap.m"
     xmlns:mvc="sap.ui.core.mvc"
     xmlns:core="sap.ui.core">
 
-    <Page title="Gate Pass Requests">
+    <Page title="Gate Pass List">
         <subHeader>
             <Bar>
                 <contentLeft>
                     <SearchField id="idGatePassSearchField" width="18rem"
-                        placeholder="Search by Request No."
+                        placeholder="Search by Gate Pass No."
                         liveChange=".onSearchFieldLiveChange" />
                 </contentLeft>
                 <contentMiddle>
@@ -23,6 +23,7 @@
                         <core:Item key="" text="All Types" />
                         <core:Item key="NRGP" text="NRGP" />
                         <core:Item key="RGP" text="RGP" />
+                        <core:Item key="GP with PO" text="GP with PO" />
                     </Select>
                 </contentMiddle>
                 <contentRight>
@@ -49,7 +50,7 @@
 
                 <columns>
                     <Column>
-                        <Text text="Request No." />
+                        <Text text="Gate Pass No." />
                     </Column>
                     <Column width="6rem">
                         <Text text="Type" />
@@ -69,6 +70,9 @@
                     <Column width="12rem" minScreenWidth="Small" demandPopin="true">
                         <Text text="Vehicle No." />
                     </Column>
+                    <Column width="10rem" minScreenWidth="Tablet" demandPopin="true">
+                        <Text text="Pending At" />
+                    </Column>
                 </columns>
 
                 <items>
@@ -83,6 +87,10 @@
                             <Text text="{gatePassList>VendorName}" />
                             <Text text="{gatePassList>Department}" />
                             <Text text="{gatePassList>VehicleNo}" />
+                            <ObjectStatus
+                                text="{= ${gatePassList>PendingAt} ? 'Pending at ' + ${gatePassList>PendingAt} : ''}"
+                                state="{= ${gatePassList>PendingAt} ? 'Warning' : 'None'}"
+                                icon="{= ${gatePassList>PendingAt} ? 'sap-icon://approvals' : ''}" />
                         </cells>
                     </ColumnListItem>
                 </items>

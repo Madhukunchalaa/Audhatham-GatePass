@@ -1,4 +1,4 @@
-sap.ui.define([
+﻿sap.ui.define([
 	"./BaseController",
 	"sap/ui/model/Filter",
 	"sap/ui/model/FilterOperator",
@@ -6,7 +6,7 @@ sap.ui.define([
 ], function (BaseController, Filter, FilterOperator, JSONModel) {
 	"use strict";
 
-	return BaseController.extend("zgpms.meilpower.com.controller.Analytics", {
+	return BaseController.extend("zaudgpms.audhatham.com.controller.Analytics", {
 
 		onInit: function () {
 			this.getView().setModel(new JSONModel(this._emptyModel()), "analytics");
@@ -18,7 +18,7 @@ sap.ui.define([
 				tiles: {
 					total: 0, pending: 0, approved: 0, rejected: 0,
 					nrgpTotal: 0, nrgpPending: 0, nrgpApproved: 0, nrgpRejected: 0,
-					rgpTotal: 0,  rgpPending: 0,  rgpApproved: 0,  rgpRejected: 0
+					rgpTotal: 0, rgpPending: 0, rgpApproved: 0, rgpRejected: 0
 				},
 				barData: [],
 				pieData: []
@@ -59,18 +59,18 @@ sap.ui.define([
 		_processData: function (aData) {
 			var c = {
 				nrgpPending: 0, nrgpApproved: 0, nrgpRejected: 0,
-				rgpPending:  0, rgpApproved:  0, rgpRejected:  0
+				rgpPending: 0, rgpApproved: 0, rgpRejected: 0
 			};
 
 			aData.forEach(function (item) {
 				var t = item.GatePassType;
 				var s = item.Status;
 				if (t === "NRGP") {
-					if (s === "Pending")  { c.nrgpPending++;  }
+					if (s === "Pending") { c.nrgpPending++; }
 					else if (s === "Approved") { c.nrgpApproved++; }
 					else if (s === "Rejected") { c.nrgpRejected++; }
 				} else if (t === "RGP") {
-					if (s === "Pending")  { c.rgpPending++;  }
+					if (s === "Pending") { c.rgpPending++; }
 					else if (s === "Approved") { c.rgpApproved++; }
 					else if (s === "Rejected") { c.rgpRejected++; }
 				}
@@ -79,22 +79,22 @@ sap.ui.define([
 			var oModel = this.getView().getModel("analytics");
 			oModel.setData({
 				tiles: {
-					total:       aData.length,
-					pending:     c.nrgpPending  + c.rgpPending,
-					approved:    c.nrgpApproved + c.rgpApproved,
-					rejected:    c.nrgpRejected + c.rgpRejected,
-					nrgpTotal:   c.nrgpPending  + c.nrgpApproved + c.nrgpRejected,
-					rgpTotal:    c.rgpPending   + c.rgpApproved  + c.rgpRejected,
-					nrgpPending:  c.nrgpPending,  nrgpApproved: c.nrgpApproved,  nrgpRejected: c.nrgpRejected,
-					rgpPending:   c.rgpPending,   rgpApproved:  c.rgpApproved,   rgpRejected:  c.rgpRejected
+					total: aData.length,
+					pending: c.nrgpPending + c.rgpPending,
+					approved: c.nrgpApproved + c.rgpApproved,
+					rejected: c.nrgpRejected + c.rgpRejected,
+					nrgpTotal: c.nrgpPending + c.nrgpApproved + c.nrgpRejected,
+					rgpTotal: c.rgpPending + c.rgpApproved + c.rgpRejected,
+					nrgpPending: c.nrgpPending, nrgpApproved: c.nrgpApproved, nrgpRejected: c.nrgpRejected,
+					rgpPending: c.rgpPending, rgpApproved: c.rgpApproved, rgpRejected: c.rgpRejected
 				},
 				barData: [
-					{ status: "Pending",  nrgp: c.nrgpPending,  rgp: c.rgpPending  },
+					{ status: "Pending", nrgp: c.nrgpPending, rgp: c.rgpPending },
 					{ status: "Approved", nrgp: c.nrgpApproved, rgp: c.rgpApproved },
 					{ status: "Rejected", nrgp: c.nrgpRejected, rgp: c.rgpRejected }
 				],
 				pieData: [
-					{ status: "Pending",  count: c.nrgpPending  + c.rgpPending  },
+					{ status: "Pending", count: c.nrgpPending + c.rgpPending },
 					{ status: "Approved", count: c.nrgpApproved + c.rgpApproved },
 					{ status: "Rejected", count: c.nrgpRejected + c.rgpRejected }
 				]
@@ -114,7 +114,7 @@ sap.ui.define([
 						dataLabel: { visible: true, formatString: "0" }
 					},
 					categoryAxis: { title: { visible: false } },
-					valueAxis:    { title: { visible: false } }
+					valueAxis: { title: { visible: false } }
 				});
 			}
 

@@ -1,5 +1,5 @@
-<mvc:View
-	controllerName="zgpms.meilpower.com.controller.Analytics"
+﻿<mvc:View
+	controllerName="zaudgpms.audhatham.com.controller.Analytics"
 	xmlns="sap.m"
 	xmlns:mvc="sap.ui.core.mvc"
 	xmlns:core="sap.ui.core"

@@ -1,11 +1,11 @@
-sap.ui.define([
+﻿sap.ui.define([
 	"sap/ui/thirdparty/jquery",
 	"./D3Chart",
 	"sap/ui/thirdparty/d3"
-], function($, D3Chart, d3) {
+], function ($, D3Chart, d3) {
 	"use strict";
 
-	return D3Chart.extend("zgpms.meilpower.com.control.D3PieChart", {
+	return D3Chart.extend("zaudgpms.audhatham.com.control.D3PieChart", {
 
 		init: function () {
 			D3Chart.prototype.init.call(this);
@@ -30,7 +30,7 @@ sap.ui.define([
 				});
 
 			var pie = d3.layout.pie()
-				.value(function(d) {
+				.value(function (d) {
 					return d.v;
 				});
 

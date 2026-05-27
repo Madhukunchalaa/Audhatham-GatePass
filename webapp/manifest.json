@@ -1,12 +1,15 @@
-{
+﻿{
 	"_version": "1.21.0",
 	"sap.app": {
-		"id": "zgpms.meilpower.com",
+		"id": "zaudgpms.audhatham.com",
 		"type": "application",
 		"i18n": {
 			"bundleUrl": "i18n/i18n.properties",
 			"fallbackLocale": "en",
-			"supportedLocales": ["en", "de"]
+			"supportedLocales": [
+				"en",
+				"de"
+			]
 		},
 		"title": "{{appTitle}}",
 		"description": "{{appDescription}}",
@@ -46,9 +49,9 @@
 			]
 		},
 		"rootView": {
-			"viewName": "zgpms.meilpower.com.view.App",
+			"viewName": "zaudgpms.audhatham.com.view.App",
 			"type": "XML",
-			"id": "app"
+			"id": "login"
 		},
 		"dependencies": {
 			"minUI5Version": "1.77.0",
@@ -58,6 +61,7 @@
 				"sap.ui.core": {},
 				"sap.ui.layout": {},
 				"sap.ui.unified": {},
+				"sap.ui.suite": {},
 				"sap.viz": {}
 			}
 		},
@@ -82,9 +86,15 @@
 				"controlId": "idMainApp",
 				"viewType": "XML",
 				"controlAggregation": "pages",
-				"viewPath": "zgpms.meilpower.com.view"
+				"clearControlAggregation": false,
+				"viewPath": "zaudgpms.audhatham.com.view"
 			},
 			"routes": [
+				{
+					"name": "login",
+					"pattern": "login",
+					"target": "TargetLogin"
+				},
 				{
 					"name": "home",
 					"pattern": "",
@@ -96,13 +106,18 @@
 					"target": "TargetGatePassCreation"
 				},
 				{
-  "name": "GatePassList",
-  "pattern": "GatePassList",
-  "target": "TargetGatePassList"
-},
+					"name": "GatePassDetail",
+					"pattern": "GatePassDetail/:reqNo:",
+					"target": "TargetGatePassCreation"
+				},
+				{
+					"name": "GatePassList",
+					"pattern": "GatePassList",
+					"target": "TargetGatePassList"
+				},
 				{
 					"name": "OutGatePass",
-					"pattern": "OutGatePass",
+					"pattern": "OutGatePass/:reqNo:/:gpNo:",
 					"target": [
 						"TargetOutGatePass"
 					]
@@ -116,7 +131,7 @@
 				},
 				{
 					"name": "InwardGatePass",
-					"pattern": "InwardGatePass",
+					"pattern": "InwardGatePass/:gpNo:",
 					"target": [
 						"TargetInwardGatePass"
 					]
@@ -124,10 +139,103 @@
 				{
 					"name": "analytics",
 					"pattern": "analytics",
-					"target": ["TargetAnalytics"]
+					"target": [
+						"TargetAnalytics"
+					]
+				},
+				{
+					"name": "NRGPList",
+					"pattern": "NRGPList",
+					"target": [
+						"TargetNRGPList"
+					]
+				},
+				{
+					"name": "NRGPDetail",
+					"pattern": "NRGPDetail/:gpNo:/:gpType:",
+					"target": [
+						"TargetNRGPDetail"
+					]
+				},
+				{
+					"name": "GatePassWithPO",
+					"pattern": "GatePassWithPO",
+					"target": [
+						"TargetGatePassWithPO"
+					]
+				},
+				{
+					"name": "IRGP",
+					"pattern": "IRGP/:step:/:gpNo:",
+					"target": [
+						"TargetIRGP"
+					]
+				},
+				{
+					"name": "PCPList",
+					"pattern": "PCPList",
+					"target": [
+						"TargetPCPList"
+					]
+				},
+				{
+					"name": "AshGatePassCreation",
+					"pattern": "AshGatePassCreation",
+					"target": [
+						"TargetAshGatePassCreation"
+					]
+				},
+				{
+					"name": "AshGatePassList",
+					"pattern": "AshGatePassList",
+					"target": [
+						"TargetAshGatePassList"
+					]
+				},
+				{
+					"name": "AshGatePassDetail",
+					"pattern": "AshGatePassDetail/:gpNo:",
+					"target": [
+						"TargetAshGatePassDetail"
+					]
+				},
+				{
+					"name": "ScrapRequestCreation",
+					"pattern": "ScrapRequestCreation",
+					"target": [
+						"TargetScrapRequestCreation"
+					]
+				},
+				{
+					"name": "ScrapRequestList",
+					"pattern": "ScrapRequestList",
+					"target": [
+						"TargetScrapRequestList"
+					]
+				},
+				{
+					"name": "ScrapRequestDetail",
+					"pattern": "ScrapRequestDetail/:gpNo:",
+					"target": [
+						"TargetScrapRequestDetail"
+					]
+				},
+				{
+					"name": "ScrapGatepassCreation",
+					"pattern": "ScrapGatepassCreation",
+					"target": [
+						"TargetScrapGatepassCreation"
+					]
 				}
 			],
 			"targets": {
+				"TargetLogin": {
+					"viewType": "XML",
+					"viewId": "Login",
+					"viewName": "Login",
+					"controlId": "idLoginNavContainer",
+					"controlAggregation": "pages"
+				},
 				"TargetHome": {
 					"viewName": "Home",
 					"viewLevel": 1
@@ -137,10 +245,10 @@
 					"viewLevel": 2
 				},
 				"TargetGatePassList": {
-  "viewType": "XML",
-  "viewId": "GatePassList",
-  "viewName": "GatePassList"
-},
+					"viewType": "XML",
+					"viewId": "GatePassList",
+					"viewName": "GatePassList"
+				},
 				"TargetOutGatePass": {
 					"viewType": "XML",
 					"viewId": "OutGatePass",
@@ -160,6 +268,66 @@
 					"viewType": "XML",
 					"viewId": "Analytics",
 					"viewName": "Analytics"
+				},
+				"TargetNRGPList": {
+					"viewType": "XML",
+					"viewId": "NRGPList",
+					"viewName": "NRGPList"
+				},
+				"TargetNRGPDetail": {
+					"viewType": "XML",
+					"viewId": "NRGPDetail",
+					"viewName": "NRGPDetail"
+				},
+				"TargetGatePassWithPO": {
+					"viewType": "XML",
+					"viewId": "GatePassWithPO",
+					"viewName": "GatePassWithPO"
+				},
+				"TargetIRGP": {
+					"viewType": "XML",
+					"viewId": "IRGP",
+					"viewName": "IRGP"
+				},
+				"TargetPCPList": {
+					"viewType": "XML",
+					"viewId": "PCPList",
+					"viewName": "PCPList"
+				},
+				"TargetAshGatePassCreation": {
+					"viewType": "XML",
+					"viewId": "AshGatePassCreation",
+					"viewName": "AshGatePassCreation"
+				},
+				"TargetAshGatePassList": {
+					"viewType": "XML",
+					"viewId": "AshGatePassList",
+					"viewName": "AshGatePassList"
+				},
+				"TargetAshGatePassDetail": {
+					"viewType": "XML",
+					"viewId": "AshGatePassDetail",
+					"viewName": "AshGatePassDetail"
+				},
+				"TargetScrapRequestCreation": {
+					"viewType": "XML",
+					"viewId": "ScrapRequestCreation",
+					"viewName": "ScrapRequestCreation"
+				},
+				"TargetScrapRequestList": {
+					"viewType": "XML",
+					"viewId": "ScrapRequestList",
+					"viewName": "ScrapRequestList"
+				},
+				"TargetScrapRequestDetail": {
+					"viewType": "XML",
+					"viewId": "ScrapRequestDetail",
+					"viewName": "ScrapRequestDetail"
+				},
+				"TargetScrapGatepassCreation": {
+					"viewType": "XML",
+					"viewId": "ScrapGatepassCreation",
+					"viewName": "ScrapGatepassCreation"
 				}
 			}
 		}

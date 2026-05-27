@@ -1,8 +1,8 @@
-# yaml-language-server: $schema=https://sap.github.io/ui5-tooling/schema/ui5.yaml.json
+﻿# yaml-language-server: $schema=https://sap.github.io/ui5-tooling/schema/ui5.yaml.json
 
 specVersion: "4.0"
 metadata:
-  name: gpms.meilpower.com.zgpms
+  name: gpms.audhatham.com.zgpms
 type: application
 server:
   customMiddleware:
@@ -12,7 +12,7 @@ server:
         ignoreCertErrors: true
         backend:
           - path: /sap
-            url: https://sapasd.meilpower.com
+            url: https://sapasd.audhatham.com
             client: '300'
         ui5:
           path:

@@ -1,11 +1,11 @@
-sap.ui.define([
+﻿sap.ui.define([
 	"sap/ui/thirdparty/jquery",
 	"./D3Chart",
 	"sap/ui/thirdparty/d3"
-], function($, D3Chart, d3) {
+], function ($, D3Chart, d3) {
 	"use strict";
 
-	return D3Chart.extend("zgpms.meilpower.com.control.D3ColumnChart", {
+	return D3Chart.extend("zaudgpms.audhatham.com.control.D3ColumnChart", {
 
 		init: function () {
 			D3Chart.prototype.init.call(this);
@@ -21,7 +21,7 @@ sap.ui.define([
 			var selRects = selContainer.selectAll("rect").data(aData);
 
 			// sort the data by "v" parameter and extract the highest value
-			var iHightestValue = aData[Object.keys(aData).sort(function(a, b){return aData[a].v - aData[b].v;}).pop()].v;
+			var iHightestValue = aData[Object.keys(aData).sort(function (a, b) { return aData[a].v - aData[b].v; }).pop()].v;
 
 			selRects.enter().append("rect");
 			selContainer.select("rect:nth-child(1)").style("fill", "var(--sapChart_OrderedColor_1)");

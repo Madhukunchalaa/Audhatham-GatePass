@@ -1,4 +1,4 @@
-{
+﻿{
   "generationParameters": {
     "generationDate": "Tue Feb 10 2026 16:33:39 GMT+0530 (India Standard Time)",
     "generatorPlatform": "Visual Studio Code",
@@ -8,7 +8,7 @@
     "appName": "zgpms",
     "appTitle": "GPMS",
     "appDescription": "An SAP Fiori application.",
-    "appNamespace": "gpms.meilpower.com",
+    "appNamespace": "gpms.audhatham.com",
     "ui5Theme": "sap_horizon",
     "ui5Version": "1.144.1",
     "enableCodeAssist": false,

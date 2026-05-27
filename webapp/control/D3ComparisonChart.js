@@ -1,11 +1,11 @@
-sap.ui.define([
+﻿sap.ui.define([
 	"sap/ui/thirdparty/jquery",
 	"./D3Chart",
 	"sap/ui/thirdparty/d3"
-], function($, D3Chart, d3) {
+], function ($, D3Chart, d3) {
 	"use strict";
 
-	return D3Chart.extend("zgpms.meilpower.com.control.D3ComparisonChart", {
+	return D3Chart.extend("zaudgpms.audhatham.com.control.D3ComparisonChart", {
 
 		init: function () {
 			D3Chart.prototype.init.call(this);
@@ -17,8 +17,8 @@ sap.ui.define([
 				return oContext.getObject();
 			});
 
-			var iHighestValue = aData[Object.keys(aData).sort(function(a, b){return aData[a].v - aData[b].v;}).pop()].v;
-			var iLowestValue = Math.abs(aData[Object.keys(aData).sort(function(a, b){return aData[b].v - aData[a].v;}).pop()].v);
+			var iHighestValue = aData[Object.keys(aData).sort(function (a, b) { return aData[a].v - aData[b].v; }).pop()].v;
+			var iLowestValue = Math.abs(aData[Object.keys(aData).sort(function (a, b) { return aData[b].v - aData[a].v; }).pop()].v);
 
 			var iNumDataPoints = aData.length,
 				iNumSpaces = iNumDataPoints - 1,
@@ -60,8 +60,8 @@ sap.ui.define([
 
 			selTexts.enter()
 				.append("text").text(function (d) {
-				return d.v;
-			}).attr("font-size", "0.875rem")
+					return d.v;
+				}).attr("font-size", "0.875rem")
 				.attr("fill", "var(--sapChart_Sequence_1_TextColor)");
 
 			selTexts.attr("y", function (d, i) {

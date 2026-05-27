@@ -1,5 +1,5 @@
-<mvc:View
-	controllerName="zgpms.meilpower.com.controller.Home"
+﻿<mvc:View
+	controllerName="zaudgpms.audhatham.com.controller.Home"
 	xmlns="sap.m"
 	xmlns:mvc="sap.ui.core.mvc"
 	xmlns:f="sap.f"
@@ -14,50 +14,19 @@
 				</VBox>
 
 				<HBox wrap="Wrap" justifyContent="Center" class="gpmsDashboardCardsContainer">
-					<!-- NRGP Card -->
-					<GenericTile class="gpmsDashCard nrgpCard" press=".onPressNRGP" header="NRGP REQUEST" subheader="Non-Returnable Gate Pass">
+					<!-- Create Gate Pass Card -->
+					<GenericTile class="gpmsDashCard createCard" press=".onPressCreateGatePass" header="CREATE GATE PASS" subheader="New Gate Pass Entry">
 						<TileContent>
 							<core:Icon src="sap-icon://add-document" class="gpmsCardIcon"/>
 						</TileContent>
 					</GenericTile>
 
-					<!-- RGP Card -->
-					<GenericTile class="gpmsDashCard rgpCard" press=".onPressRGP" header="RGP REQUEST" subheader="Returnable Gate Pass">
+					<!-- Gate Pass List Card -->
+					<GenericTile class="gpmsDashCard listCard" press=".onPressGatePassList" header="GATE PASS LIST" subheader="View All Gate Passes">
 						<TileContent>
-							<core:Icon src="sap-icon://shipping-status" class="gpmsCardIcon"/>
+							<core:Icon src="sap-icon://list" class="gpmsCardIcon"/>
 						</TileContent>
 					</GenericTile>
-
-					<!-- Analytics Card -->
-					<GenericTile class="gpmsDashCard reportsCard" press=".onGenericTileAnalyticsPress" header="REPORTS" subheader="View Statistics &amp; Logs">
-						<TileContent>
-							<core:Icon src="sap-icon://business-objects-experience" class="gpmsCardIcon"/>
-						</TileContent>
-					</GenericTile>
-
-					<!-- Inward Gate Pass Card -->
-					<GenericTile class="gpmsDashCard inwardCard" press=".onPressInward" header="INWARD GATE PASS" subheader="Return Items (RGP)">
-						<TileContent>
-							<core:Icon src="sap-icon://down-back" class="gpmsCardIcon"/>
-						</TileContent>
-					</GenericTile>
-
-					<!-- Out Gate Pass Card -->
-					<GenericTile class="gpmsDashCard outCard" press=".onPressOutGatePass" header="OUT GATE PASS" subheader="Generate &amp; Print Pass">
-						<TileContent>
-							<core:Icon src="sap-icon://shipping-status" class="gpmsCardIcon"/>
-						</TileContent>
-					</GenericTile>
-					<GenericTile class="gpmsDashCard listCard"
-    press=".onPressGatePassList"
-    header="GATE PASS LIST"
-    subheader="View All Requests">
-
-    <TileContent>
-        <core:Icon src="sap-icon://list" class="gpmsCardIcon"/>
-    </TileContent>
-
-</GenericTile>
 				</HBox>
 			</VBox>
 		</content>

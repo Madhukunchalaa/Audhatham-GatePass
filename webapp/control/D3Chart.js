@@ -1,16 +1,16 @@
-sap.ui.define([
+﻿sap.ui.define([
 	"sap/ui/core/Control",
 	"sap/ui/core/HTML",
 	"sap/ui/core/ResizeHandler",
 	"sap/ui/dom/jquery/rect" // provides jQuery.fn.rect
-], function(Control, HTML, ResizeHandler) {
+], function (Control, HTML, ResizeHandler) {
 	"use strict";
 
-	return Control.extend("zgpms.meilpower.com.control.D3Chart", {
+	return Control.extend("zaudgpms.audhatham.com.control.D3Chart", {
 
 		metadata: {
 			properties: {
-				type: {type: "string", defaultValue: "Radial"}
+				type: { type: "string", defaultValue: "Radial" }
 			},
 			aggregations: {
 				_html: {
@@ -66,7 +66,7 @@ sap.ui.define([
 			/**
 			 * Renders the root div and the HTML aggregation
 			 * @param {sap.ui.core.RenderManger} oRM the render manager
-			 * @param {zgpms.meilpower.com.control.D3Chart} oControl the control to be rendered
+			 * @param {zaudgpms.audhatham.com.control.D3Chart} oControl the control to be rendered
 			 */
 			render: function (oRM, oControl) {
 				oRM.openStart("div", oControl);

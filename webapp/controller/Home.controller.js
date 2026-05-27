@@ -1,9 +1,14 @@
-sap.ui.define([
-	"./BaseController"
-], function (BaseController) {
+﻿sap.ui.define([
+	"./BaseController",
+	"sap/ui/model/json/JSONModel",
+	"sap/m/MessageBox",
+	"sap/m/MessageToast",
+	"sap/ui/model/Filter",
+	"sap/ui/model/FilterOperator"
+], function (BaseController, JSONModel, MessageBox, MessageToast, Filter, FilterOperator) {
 	"use strict";
 
-	return BaseController.extend("zgpms.meilpower.com.controller.Home", {
+	return BaseController.extend("zaudgpms.audhatham.com.controller.Home", {
 
 		onInit: function () {
 		},
@@ -20,10 +25,6 @@ sap.ui.define([
 			});
 		},
 
-		onPressGatePassList: function () {
-    this.getRouter().navTo("GatePassList");
-},
-
 		onPressInward: function () {
 			this.getRouter().navTo("InwardGatePass");
 		},
@@ -34,6 +35,69 @@ sap.ui.define([
 
 		onGenericTileAnalyticsPress: function () {
 			this.getRouter().navTo("analytics");
+		},
+
+		onPressNRGPList: function () {
+			this.getRouter().navTo("NRGPList");
+		},
+
+		onGenericTileGatePassListPress: function () {
+			this.getRouter().navTo("GatePassList");
+		},
+
+		onGenericTileGatePassWithPOPress: function () {
+			this.getRouter().navTo("GatePassWithPO");
+		},
+
+		onPressIRGP: function () {
+			this.getRouter().navTo("IRGP", {
+				step: "LIST",
+				gpNo: "ALL"
+			});
+		},
+
+		// ==========================================================
+		// ADD PCP FEATURE
+		// ==========================================================
+
+		onPressAddPCP: function () {
+			this.getRouter().navTo("PCPList");
+		},
+
+		// ==========================================================
+		// ASH GATE PASS
+		// ==========================================================
+
+		onPressAshGatePassCreation: function () {
+			this.getRouter().navTo("AshGatePassCreation");
+		},
+
+		onPressAshGatePassList: function () {
+			this.getRouter().navTo("AshGatePassList");
+		},
+
+		// ==========================================================
+		// SCRAP MODULE
+		// ==========================================================
+
+		onPressScrapRequestCreation: function () {
+			this.getRouter().navTo("ScrapRequestCreation");
+		},
+
+		onPressScrapRequestList: function () {
+			this.getRouter().navTo("ScrapRequestList");
+		},
+
+		onPressScrapGatepassCreation: function () {
+			this.getRouter().navTo("ScrapGatepassCreation");
+		},
+
+		onPressCreateGatePass: function () {
+			this.getRouter().navTo("GatePassCreation");
+		},
+
+		onPressGatePassList: function () {
+			this.getRouter().navTo("GatePassList");
 		}
 
 	});

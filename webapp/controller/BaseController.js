@@ -1,17 +1,17 @@
-sap.ui.define([
+﻿sap.ui.define([
 	"sap/ui/core/mvc/Controller",
 	"sap/ui/core/UIComponent"
-], function(Controller, UIComponent) {
+], function (Controller, UIComponent) {
 	"use strict";
 
-	return Controller.extend("zgpms.meilpower.com.controller.BaseController", {
+	return Controller.extend("zaudgpms.audhatham.com.controller.BaseController", {
 
 		/**
 		 * Convenience method for accessing the router.
 		 * @public
 		 * @returns {sap.ui.core.routing.Router} the router for this component
 		 */
-		getRouter : function () {
+		getRouter: function () {
 			return UIComponent.getRouterFor(this);
 		},
 
@@ -21,7 +21,7 @@ sap.ui.define([
 		 * @param {string} [sName] the model name
 		 * @returns {sap.ui.model.Model} the model instance
 		 */
-		getModel : function (sName) {
+		getModel: function (sName) {
 			return this.getView().getModel(sName);
 		},
 
@@ -32,7 +32,7 @@ sap.ui.define([
 		 * @param {string} sName the model name
 		 * @returns {sap.ui.core.mvc.View} the view instance
 		 */
-		setModel : function (oModel, sName) {
+		setModel: function (oModel, sName) {
 			return this.getView().setModel(oModel, sName);
 		},
 
@@ -45,8 +45,8 @@ sap.ui.define([
 		 * @param {string[]} [aPlaceholderValues] The values which will repalce the placeholders in the i18n value
 		 * @returns {Promise<string>} The promise
 		 */
-		getBundleTextByModel: function(sI18nKey, oResourceModel, aPlaceholderValues){
-			return oResourceModel.getResourceBundle().then(function(oBundle){
+		getBundleTextByModel: function (sI18nKey, oResourceModel, aPlaceholderValues) {
+			return oResourceModel.getResourceBundle().then(function (oBundle) {
 				return oBundle.getText(sI18nKey, aPlaceholderValues);
 			});
 		}

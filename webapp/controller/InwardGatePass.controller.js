@@ -1,26 +1,29 @@
-sap.ui.define([
-	"zgpms/meilpower/com/controller/BaseController",
+﻿sap.ui.define([
+	"zgpms/audhatham/com/controller/BaseController",
 	"sap/ui/model/json/JSONModel",
 	"sap/m/MessageBox",
 	"sap/m/MessageToast"
 ], function (BaseController, JSONModel, MessageBox, MessageToast) {
 	"use strict";
 
-	return BaseController.extend("zgpms.meilpower.com.controller.InwardGatePass", {
+	return BaseController.extend("zaudgpms.audhatham.com.controller.InwardGatePass", {
 		onInit: function () {
 			this._resetModel();
 			this.getRouter().getRoute("InwardGatePass").attachPatternMatched(this._onRouteMatched, this);
 		},
 
-		_onRouteMatched: function () {
+		_onRouteMatched: function (oEvent) {
 			this._resetModel();
+			var sGPNo = oEvent.getParameter("arguments").gpNo;
+			if (sGPNo) {
+				this._loadByGPNo(sGPNo);
+			}
 		},
 
 		_resetModel: function () {
 			this._rawHeader = null;
-			var oModel = new JSONModel({
+			var oData = {
 				GatePassNo: "",
-				
 				DueDate: "",
 				RevisedDueDate: "",
 				ReceivedDate: null,
@@ -43,8 +46,13 @@ sap.ui.define([
 				EWayBillNo: "",
 				EWayBillDate: null,
 				FinalTotal: "0.00"
-			});
-			this.getView().setModel(oModel, "inward");
+			};
+			var oModel = this.getView().getModel("inward");
+			if (oModel) {
+				oModel.setData(oData);
+			} else {
+				this.getView().setModel(new JSONModel(oData), "inward");
+			}
 		},
 
 		_formatDate: function (vDate) {
@@ -79,7 +87,11 @@ sap.ui.define([
 		onSearchRGP: function (oEvent) {
 			var sQuery = oEvent.getParameter("query");
 			if (!sQuery) { return; }
+			this._resetModel();
+			this._loadByGPNo(sQuery);
+		},
 
+		_loadByGPNo: function (sGPNo) {
 			var oODataModel = this.getOwnerComponent().getModel();
 			if (!oODataModel) {
 				MessageBox.error("Backend OData service not connected.");
@@ -87,16 +99,15 @@ sap.ui.define([
 			}
 
 			sap.ui.core.BusyIndicator.show(0);
-			this._resetModel();
 
 			oODataModel.read("/GatePassHDRSet", {
-				filters: [new sap.ui.model.Filter("GatePassNo", sap.ui.model.FilterOperator.EQ, sQuery)],
+				filters: [new sap.ui.model.Filter("GatePassNo", sap.ui.model.FilterOperator.EQ, sGPNo)],
 				urlParameters: { "$expand": "GatePassItemNav" },
 				success: function (oData) {
 					sap.ui.core.BusyIndicator.hide();
 					var oResult = oData.results && oData.results[0];
 					if (!oResult) {
-						MessageBox.error("RGP Gate Pass " + sQuery + " not found.");
+						MessageBox.error("RGP Gate Pass " + sGPNo + " not found.");
 						return;
 					}
 					if (oResult.GatePassType !== "RGP") {
@@ -120,8 +131,8 @@ sap.ui.define([
 			var sFullyReceivedMsg = "";
 			var aMapped = aItems.map(function (item) {
 				var fSent = parseFloat(item.SentQuantity || item.Quantity || 0);
-				var fRec  = parseFloat(item.RecievedQuantity || 0);
-				var fBal  = parseFloat(item.BalanceQuantity);
+				var fRec = parseFloat(item.RecievedQuantity || 0);
+				var fBal = parseFloat(item.BalanceQuantity);
 
 				// If balance is 0 or NaN but nothing has been received yet, 
 				// it means it's a new Gate Pass and balance should equal sent quantity.
@@ -135,19 +146,19 @@ sap.ui.define([
 
 				return {
 					// display fields
-					material:     item.Material || "",
+					material: item.Material || "",
 					materialName: item.Description || item.MaterialName || "",
-					sentQty:      fSent,
-					recvdQty:     0,
-					balQty:       parseFloat(fBal.toFixed(3)),
-					_initialBal:  parseFloat(fBal.toFixed(3)),
-					uom:          item.UOM || item.Uom || "EA",
+					sentQty: fSent,
+					recvdQty: 0,
+					balQty: parseFloat(fBal.toFixed(3)),
+					_initialBal: parseFloat(fBal.toFixed(3)),
+					uom: item.UOM || item.Uom || "EA",
 					// raw fields needed for POST
-					_itemNo:        item.ItemNo || "",
-					_itemNetPrice:  item.ItemNetPrice || "0.00",
-					_totalValue:    item.Totalvalue || "0.00",
+					_itemNo: item.ItemNo || "",
+					_itemNetPrice: item.ItemNetPrice || "0.00",
+					_totalValue: item.Totalvalue || "0.00",
 					_gatePassReqNo: item.GatePassReqNo || "",
-					_itemRemarks:   item.Remarks || ""
+					_itemRemarks: item.Remarks || ""
 				};
 			});
 
@@ -155,33 +166,33 @@ sap.ui.define([
 				MessageBox.warning(sFullyReceivedMsg);
 			}
 
-			oModel.setProperty("/GatePassNo",     oData.GatePassNo || "");
-			oModel.setProperty("/GatePassDate",   this._formatDate(oData.GatePassDate));
-			oModel.setProperty("/DueDate",        this._formatDate(oData.ReturnableDate || oData.DueDate));
+			oModel.setProperty("/GatePassNo", oData.GatePassNo || "");
+			oModel.setProperty("/GatePassDate", this._formatDate(oData.GatePassDate));
+			oModel.setProperty("/DueDate", this._formatDate(oData.ReturnableDate || oData.DueDate));
 			oModel.setProperty("/RevisedDueDate", this._formatDate(oData.Extreturndate || oData.ExtendedReturnableDate));
-			oModel.setProperty("/ReceivedDate",   null);
-			oModel.setProperty("/Plant",          oData.Plant || "");
-			oModel.setProperty("/Department",     oData.Department || "");
-			oModel.setProperty("/VendorName",     oData.VendorName || "");
-			oModel.setProperty("/VendorGST",      oData.VendorGST || "");
-			oModel.setProperty("/items",          aMapped);
-			oModel.setProperty("/showLogistics",  false);
+			oModel.setProperty("/ReceivedDate", null);
+			oModel.setProperty("/Plant", oData.Plant || "");
+			oModel.setProperty("/Department", oData.Department || "");
+			oModel.setProperty("/VendorName", oData.VendorName || "");
+			oModel.setProperty("/VendorGST", oData.VendorGST || "");
+			oModel.setProperty("/items", aMapped);
+			oModel.setProperty("/showLogistics", true);
 			this._calculateFinalTotal();
 		},
 
 		onQtyChange: function (oEvent) {
-			var oSource  = oEvent.getSource();
+			var oSource = oEvent.getSource();
 			var oContext = oSource.getBindingContext("inward");
-			var oItem    = oContext.getObject();
-			var oModel   = this.getView().getModel("inward");
+			var oItem = oContext.getObject();
+			var oModel = this.getView().getModel("inward");
 
-			var fNow     = parseFloat(oSource.getValue() || 0);
+			var fNow = parseFloat(oSource.getValue() || 0);
 
 			// Manually sync the typed value to the model for real-time total calculation
 			oModel.setProperty(oContext.getPath() + "/recvdQty", fNow);
 
 			var fInitial = parseFloat(oItem._initialBal || oItem.sentQty || 0);
-			var fBal     = parseFloat((fInitial - fNow).toFixed(3));
+			var fBal = parseFloat((fInitial - fNow).toFixed(3));
 
 			if (fBal < 0) {
 				MessageToast.show("Received quantity exceeds the available balance!");
@@ -236,9 +247,9 @@ sap.ui.define([
 		},
 
 		onPostInward: function () {
-			var oModel   = this.getView().getModel("inward");
-			var aItems   = oModel.getProperty("/items");
-			var oHdr     = this._rawHeader || {};
+			var oModel = this.getView().getModel("inward");
+			var aItems = oModel.getProperty("/items");
+			var oHdr = this._rawHeader || {};
 
 			var bValid = aItems.some(function (it) { return parseFloat(it.recvdQty) > 0; });
 			if (!bValid) {
@@ -250,49 +261,49 @@ sap.ui.define([
 
 			var aNavItems = aItems.map(function (it) {
 				return {
-					GatePassType:       "RGP",
-					GatePassNo:         sGatePassNo,
-					ItemNo:             it._itemNo,
-					Material:           it.material,
-					Description:        it.materialName,
-					UOM:                it.uom,
-					ItemNetPrice:       it._itemNetPrice,
-					SentQuantity:       parseFloat(it.sentQty).toFixed(3),
-					RecievedQuantity:   parseFloat(it.recvdQty).toFixed(3),
-					BalanceQuantity:    parseFloat(it.balQty).toFixed(3),
-					Totalvalue:         it._totalValue,
-					GatePassReqNo:      it._gatePassReqNo,
-					Remarks:            it._itemRemarks
+					GatePassType: "RGP",
+					GatePassNo: sGatePassNo,
+					ItemNo: it._itemNo,
+					Material: it.material,
+					Description: it.materialName,
+					UOM: it.uom,
+					ItemNetPrice: it._itemNetPrice,
+					SentQuantity: parseFloat(it.sentQty).toFixed(3),
+					RecievedQuantity: parseFloat(it.recvdQty).toFixed(3),
+					BalanceQuantity: parseFloat(it.balQty).toFixed(3),
+					Totalvalue: it._totalValue,
+					GatePassReqNo: it._gatePassReqNo,
+					Remarks: it._itemRemarks
 				};
 			});
 
 			var oPayload = {
-				GatePassType:    "RGP",
-				GatePassNo:      sGatePassNo,
-				Plant:           oHdr.Plant           || "",
-				Vendor:          oHdr.Vendor          || "",
-				VendorName:      oHdr.VendorName      || "",
-				ZipCode:         oHdr.ZipCode         || "",
-				City:            oHdr.City            || "",
+				GatePassType: "RGP",
+				GatePassNo: sGatePassNo,
+				Plant: oHdr.Plant || "",
+				Vendor: oHdr.Vendor || "",
+				VendorName: oHdr.VendorName || "",
+				ZipCode: oHdr.ZipCode || "",
+				City: oHdr.City || "",
 				// GatePassDate:    oHdr.GatePassDate    || "",
-				PurchasingDoc:   oHdr.PurchasingDoc   || "",
-				ChallanDate:     oHdr.ChallanDate     || "",
-				GateEntryNo:     oHdr.GateEntryNo     || "",
-				Extreturndate:   this._formatDateForPayload(oModel.getProperty("/RevisedDueDate")) || "",
-				RecievedDate:    this._formatDateForPayload(oModel.getProperty("/ReceivedDate")) || "",
-				ReturnableDate:  oHdr.ReturnableDate  || "",
-				Department:      oHdr.Department      || "",
-				ChallanNumber:   oHdr.ChallanNumber   || "",
-				GateExitdate:    oHdr.GateExitdate    || "",
-				ReqEmpID:        oHdr.ReqEmpID        || "",
-				FinanceHODId:    oHdr.FinanceHODId    || "",
-				PlantHODId:      oHdr.PlantHODId      || "",
-				StoreHODId:      oHdr.StoreHODId      || "",
-				HODEmpID:        oHdr.HODEmpID        || "",
-				Remarks:         oModel.getProperty("/DCNotes") || oHdr.Remarks || "",
-				VehicleNo:       oModel.getProperty("/VehicleNo") || "",
-				ModeOfDispatch:  oModel.getProperty("/ModeOfTransport") || "",
-				GateRetItmNav:   aNavItems
+				PurchasingDoc: oHdr.PurchasingDoc || "",
+				ChallanDate: oHdr.ChallanDate || "",
+				GateEntryNo: oHdr.GateEntryNo || "",
+				Extreturndate: this._formatDateForPayload(oModel.getProperty("/RevisedDueDate")) || "",
+				RecievedDate: this._formatDateForPayload(oModel.getProperty("/ReceivedDate")) || "",
+				ReturnableDate: oHdr.ReturnableDate || "",
+				Department: oHdr.Department || "",
+				ChallanNumber: oHdr.ChallanNumber || "",
+				GateExitdate: oHdr.GateExitdate || "",
+				ReqEmpID: oHdr.ReqEmpID || "",
+				FinanceHODId: oHdr.FinanceHODId || "",
+				PlantHODId: oHdr.PlantHODId || "",
+				StoreHODId: oHdr.StoreHODId || "",
+				HODEmpID: oHdr.HODEmpID || "",
+				Remarks: oModel.getProperty("/DCNotes") || oHdr.Remarks || "",
+				VehicleNo: oModel.getProperty("/VehicleNo") || "",
+				ModeOfDispatch: oModel.getProperty("/ModeOfTransport") || "",
+				GateRetItmNav: aNavItems
 			};
 
 			var oODataModel = this.getOwnerComponent().getModel();
@@ -364,19 +375,19 @@ sap.ui.define([
 			var sDate = new Date().toLocaleDateString('en-GB').split('/').join('-');
 
 			// Header
-			var sLogoUrl = sap.ui.require.toUrl("zgpms/meilpower/com/images/meil_logo.png");
+			var sLogoUrl = sap.ui.require.toUrl("zgpms/audhatham/com/images/audhataam_logo.png");
 			try {
 				var sLogoBase64 = await this._getImageBase64(sLogoUrl);
 				doc.addImage(sLogoBase64, 'PNG', margin, 10, 35, 12);
 			} catch (e) {
-				doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(204, 32, 32); doc.text("MEIL", margin, 20);
+				doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(204, 32, 32); doc.text("Audhataam", margin, 20);
 			}
 
 			doc.setFontSize(16); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "bold");
-			doc.text("MEIL Neyveli Energy Private Limited", pageWidth / 2 + 10, 18, { align: "center" });
+			doc.text("Audhataam Pharmaceuticals Private Limited", pageWidth / 2 + 10, 18, { align: "center" });
 			doc.setFontSize(7); doc.setFont("helvetica", "normal");
-			doc.text("250 MW LFPP, Uttangal, Neyveli, Tamilnadu - 607804, India", pageWidth / 2 + 10, 25, { align: "center" });
-			
+			doc.text("3rd Floor, NCC Building, Durgam Cheruvu Road, Hi-Tech City, Madhapur, Hyderabad, Telangana, 500081, India", pageWidth / 2 + 10, 25, { align: "center" });
+
 			doc.setFontSize(10); doc.setFont("helvetica", "bold");
 			doc.text("INWARD GATE PASS (RECEIPT)", pageWidth / 2, 38, { align: "center" });
 			doc.line(pageWidth / 2 - 40, 39, pageWidth / 2 + 40, 39);
@@ -387,20 +398,20 @@ sap.ui.define([
 
 			y += 10; doc.setFont("helvetica", "bold");
 			doc.text("Vendor:", margin, y); doc.setFont("helvetica", "normal"); doc.text(oInward.VendorName || "", margin + 20, y);
-			
+
 			y += 10;
 			var tableData = (oInward.items || []).filter(it => parseFloat(it.recvdQty) > 0).map(function (it, i) {
 				var fQty = parseFloat(it.recvdQty) || 0;
 				var fRate = parseFloat(it._itemNetPrice) || 0;
 				var fAmt = fQty * fRate;
 				return [
-					i + 1, 
-					it.materialName || "", 
-					it.sentQty, 
-					it.recvdQty, 
-					it.balQty, 
-					it.uom, 
-					fRate.toFixed(2), 
+					i + 1,
+					it.materialName || "",
+					it.sentQty,
+					it.recvdQty,
+					it.balQty,
+					it.uom,
+					fRate.toFixed(2),
 					fAmt.toFixed(2)
 				];
 			});
@@ -411,15 +422,15 @@ sap.ui.define([
 				theme: 'grid',
 				styles: { fontSize: 8, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.1 },
 				headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.1 },
-				columnStyles: { 
-					0: { cellWidth: 10, halign: 'center' }, 
-					1: { cellWidth: 'auto' }, 
-					2: { cellWidth: 15, halign: 'center' }, 
-					3: { cellWidth: 20, halign: 'center' }, 
-					4: { cellWidth: 20, halign: 'center' }, 
-					5: { cellWidth: 15, halign: 'center' }, 
-					6: { cellWidth: 15, halign: 'right' }, 
-					7: { cellWidth: 20, halign: 'right' } 
+				columnStyles: {
+					0: { cellWidth: 10, halign: 'center' },
+					1: { cellWidth: 'auto' },
+					2: { cellWidth: 15, halign: 'center' },
+					3: { cellWidth: 20, halign: 'center' },
+					4: { cellWidth: 20, halign: 'center' },
+					5: { cellWidth: 15, halign: 'center' },
+					6: { cellWidth: 15, halign: 'right' },
+					7: { cellWidth: 20, halign: 'right' }
 				}
 			});
 
@@ -447,7 +458,7 @@ sap.ui.define([
 			var sDate = new Date().toLocaleDateString('en-GB').split('/').join('-');
 
 			// --- 1. Header Section ---
-			var sLogoUrl = sap.ui.require.toUrl("zgpms/meilpower/com/images/meil_logo.png");
+			var sLogoUrl = sap.ui.require.toUrl("zgpms/audhatham/com/images/audhataam_logo.png");
 			try {
 				var sLogoBase64 = await this._getImageBase64(sLogoUrl);
 				doc.addImage(sLogoBase64, 'PNG', margin, 5, 25, 9);
@@ -455,13 +466,13 @@ sap.ui.define([
 				console.error("Logo load failed", e);
 			}
 			doc.setFont("helvetica", "bold"); doc.setFontSize(14);
-			doc.text("MEIL Neyveli Energy Private Limited", pageWidth / 2, 10, { align: "center" });
+			doc.text("Audhataam Pharmaceuticals Private Limited", pageWidth / 2, 10, { align: "center" });
 			doc.setFontSize(7); doc.setFont("helvetica", "normal");
-			doc.text("(Formerly TAGA Neyveli Power Company Private Limited)", pageWidth / 2, 13, { align: "center" });
-			doc.text("250MW LFPP, Uthangal, Neyveli, Tamilnadu - 607804, India.", pageWidth / 2, 16, { align: "center" });
-			doc.text("Tel : +91-4142-270300 | Fax : +91-4142-270401", pageWidth / 2, 19, { align: "center" });
+			doc.text("A Progressive Pharmaceutical & API Company", pageWidth / 2, 13, { align: "center" });
+			doc.text("3rd Floor, NCC Building, Durgam Cheruvu Road, Hi-Tech City, Madhapur, Hyderabad, Telangana, 500081, India.", pageWidth / 2, 16, { align: "center" });
+			doc.text("Tel : +91-40-67151000 | Email : info@audhataam.com", pageWidth / 2, 19, { align: "center" });
 			doc.setFont("helvetica", "bold");
-			doc.text("GSTIN : 33AACCS2753B1ZV | CIN : U40109TN1993PTC026223", pageWidth / 2, 22, { align: "center" });
+			doc.text("GSTIN : 36AABCA8375L1Z1 | CIN : U24239TG2020PTC144888", pageWidth / 2, 22, { align: "center" });
 
 			doc.setFontSize(11);
 			doc.text("DELIVERY CHALLAN (RETURN RECEIPT)", pageWidth / 2, 30, { align: "center" });
@@ -512,7 +523,7 @@ sap.ui.define([
 			doc.setFont("helvetica", "normal"); doc.text(oInward.Department || "", c3X + 28, hY + 10);
 
 			doc.setFont("helvetica", "bold"); doc.text("Received At:", c3X, hY + 18);
-			doc.setFont("helvetica", "normal"); doc.text("Uthangal, Neyveli", c3X + 28, hY + 18);
+			doc.setFont("helvetica", "normal"); doc.text("Madhapur, Hyderabad", c3X + 28, hY + 18);
 			doc.setFont("helvetica", "bold"); doc.text("EWBNo:", c3X, hY + 34);
 			doc.setFont("helvetica", "normal"); doc.text(oInward.EWayBillNo || "", c3X + 28, hY + 34);
 
@@ -550,6 +561,57 @@ sap.ui.define([
 			doc.setFont("helvetica", "normal"); doc.text("Materials received back against RGP. Transaction for returnable items receipt.", margin + 12, y + 6);
 
 			doc.save("InwardDC_" + (oInward.GatePassNo || "Draft") + ".pdf");
+		},
+
+		onInsuranceCheck: function (oEvent) {
+			var bSelected = oEvent.getParameter("selected");
+			var oInwardModel = this.getView().getModel("inward");
+			var oInwardData = oInwardModel ? oInwardModel.getData() : {};
+
+			if (bSelected) {
+				if (!this._pInsuranceDialog) {
+					this._pInsuranceDialog = sap.ui.core.Fragment.load({
+						id: this.getView().getId(),
+						name: "zaudgpms.audhatham.com.view.fragments.InwardInsuranceDialog",
+						controller: this
+					}).then(function (oDialog) {
+						this.getView().addDependent(oDialog);
+						var oModel = new sap.ui.model.json.JSONModel({});
+						oDialog.setModel(oModel, "insurance");
+						return oDialog;
+					}.bind(this));
+				}
+				this._pInsuranceDialog.then(function (oDialog) {
+					var oInsModel = oDialog.getModel("insurance");
+					oInsModel.setData({
+						InvoiceNo: oInwardData.GatePassNo || "",
+						InsuranceDate: new Date().toLocaleDateString('en-GB').split('/').join('-'),
+						ReceivedDate: oInwardData.ReceivedDate || new Date().toLocaleDateString('en-GB').split('/').join('-'),
+						Vendor: oInwardData.Vendor || "",
+						VendorAddress: oInwardData.VendorAddress || "",
+						ModeOfTransport: oInwardData.ModeOfTransport || "",
+						VehicleNo: oInwardData.VehicleNo || "",
+						InvoiceValue: oInwardData.FinalTotal ? oInwardData.FinalTotal.toString().replace(/,/g, '') : "",
+						RgpDescription: oInwardData.Remarks || oInwardData.DCNotes || ""
+					});
+					oDialog.open();
+				});
+			}
+		},
+
+		onInsuranceSubmit: function () {
+			sap.m.MessageToast.show("Insurance details saved locally. Ready for backend mapping.");
+			this.byId("idInsuranceRequired").setSelected(true);
+			this._pInsuranceDialog.then(function (oDialog) {
+				oDialog.close();
+			});
+		},
+
+		onInsuranceCancel: function () {
+			this.byId("idInsuranceRequired").setSelected(false);
+			this._pInsuranceDialog.then(function (oDialog) {
+				oDialog.close();
+			});
 		}
 	});
 });
