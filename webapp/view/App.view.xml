@@ -1,4 +1,4 @@
-﻿<mvc:View
+<mvc:View
 	controllerName="zaudgpms.audhatham.com.controller.App"
 	xmlns="sap.m"
 	xmlns:mvc="sap.ui.core.mvc"

@@ -1,4 +1,4 @@
-﻿<mvc:View
+<mvc:View
 	controllerName="zaudgpms.audhatham.com.controller.GatePassCreation"
 	xmlns="sap.m"
 	xmlns:mvc="sap.ui.core.mvc"
@@ -16,7 +16,7 @@
 		<content>
 			<VBox class="gpmsContentWrapper sapUiMediumMargin">
 
-				<!-- ─── SECTION 1 · Control Parameters ──────────── -->
+				<!-- ─── SECTION 1 · Control Parameters (Checkboxes) ──── -->
 				<Panel class="gpmsSection" expandable="false">
 					<headerToolbar>
 						<Toolbar class="gpmsSectionBar gpmsAccentBar">
@@ -24,71 +24,134 @@
 							<Label text="Control Parameters" class="gpmsSectionBarLabel"/>
 						</Toolbar>
 					</headerToolbar>
-					<layout:Grid defaultSpan="XL4 L4 M4 S12" vSpacing="1" hSpacing="1">
-						
+					<layout:Grid defaultSpan="XL3 L3 M6 S12" vSpacing="1" hSpacing="1">
+
 						<!-- Direction -->
 						<VBox>
 							<Label text="Direction" required="true" class="gpmsFieldLabel"/>
-							<RadioButtonGroup 
-								columns="2" 
-								selectedIndex="{path: 'gp>/DirectionIndex', mode: 'TwoWay'}" 
-								select=".onDirectionChange" 
-								editable="{gp>/editable}">
-								<buttons>
-									<RadioButton text="Inward" />
-									<RadioButton text="Outward" />
-								</buttons>
-							</RadioButtonGroup>
+							<CheckBox
+								text="Inward"
+								selected="{gp>/IsInward}"
+								select=".onInwardChange"
+								editable="{gp>/editable}"
+								class="sapUiTinyMarginTop"/>
+							<CheckBox
+								text="Outward"
+								selected="{gp>/IsOutward}"
+								select=".onOutwardChange"
+								editable="{gp>/editable}"
+								class="sapUiTinyMarginTop"/>
 						</VBox>
 
-						<!-- Type -->
+						<!-- Gate Pass Type -->
 						<VBox>
-							<Label text="Type" required="true" class="gpmsFieldLabel"/>
-							<RadioButtonGroup 
-								columns="2" 
-								selectedIndex="{path: 'gp>/TypeIndex', mode: 'TwoWay'}" 
-								select=".onTypeChange" 
-								editable="{gp>/editable}">
-								<buttons>
-									<RadioButton text="Returnable" />
-									<RadioButton text="Non Returnable" />
-								</buttons>
-							</RadioButtonGroup>
+							<Label text="Gate Pass Type" required="true" class="gpmsFieldLabel"/>
+							<CheckBox
+								text="Returnable (RGP)"
+								selected="{gp>/IsReturnable}"
+								select=".onReturnableChange"
+								editable="{gp>/editable}"
+								class="sapUiTinyMarginTop"/>
+							<CheckBox
+								text="Non-Returnable (NRGP)"
+								selected="{gp>/IsNonReturnable}"
+								select=".onNonReturnableChange"
+								editable="{gp>/editable}"
+								class="sapUiTinyMarginTop"/>
 						</VBox>
 
 						<!-- Entry Mode -->
 						<VBox>
-							<Label text="Entry Mode" required="true" class="gpmsFieldLabel"/>
-							<RadioButtonGroup 
-								columns="2" 
-								selectedIndex="{path: 'gp>/EntryModeIndex', mode: 'TwoWay'}" 
-								select=".onEntryModeChange" 
-								editable="{gp>/editable}">
-								<buttons>
-									<RadioButton text="System / PO" />
-									<RadioButton text="Manual" />
-								</buttons>
-							</RadioButtonGroup>
+							<Label text="Entry Mode" class="gpmsFieldLabel"/>
+							<CheckBox
+								text="Manual Entry"
+								selected="{gp>/IsManual}"
+								select=".onManualChange"
+								editable="{gp>/editable}"
+								class="sapUiTinyMarginTop"/>
+						</VBox>
+
+						<!-- Document References -->
+						<VBox>
+							<Label text="Document Reference" class="gpmsFieldLabel"/>
+							<CheckBox
+								text="PO Number"
+								selected="{gp>/HasPONumber}"
+								select=".onPONumberCheckBoxSelect"
+								editable="{gp>/editable}"
+								class="sapUiTinyMarginTop"/>
+							<CheckBox
+								text="Customer Invoice No."
+								selected="{gp>/HasCustomerInvoice}"
+								select=".onCustomerInvoiceNoCheckBoxSelect"
+								editable="{gp>/editable}"
+								class="sapUiTinyMarginTop"/>
+						</VBox>
+
+						<!-- Category — toggles between Inward and Outward -->
+						<VBox>
+							<VBox visible="{gp>/IsInward}">
+								<Label text="Inward Category" class="gpmsFieldLabel"/>
+								<Select
+									selectedKey="{gp>/InwardCategory}"
+									editable="{gp>/editable}"
+									class="gpmsFieldInput"
+									width="100%">
+									<core:Item key="01-Purchase order" text="01-Purchase order"/>
+									<core:Item key="02-Customer return" text="02-Customer return"/>
+									<core:Item key="03-Samples" text="03-Samples"/>
+									<core:Item key="04-Others" text="04-Others"/>
+								</Select>
+							</VBox>
+							<VBox visible="{gp>/IsOutward}">
+								<Label text="Outward Category" class="gpmsFieldLabel"/>
+								<Select
+									selectedKey="{gp>/OutwardCategory}"
+									editable="{gp>/editable}"
+									class="gpmsFieldInput"
+									width="100%">
+									<core:Item key="01-Service maintenance" text="01-Service maintenance"/>
+									<core:Item key="02-Customer sales" text="02-Customer sales"/>
+									<core:Item key="03-Vendor Returns" text="03-Vendor Returns"/>
+									<core:Item key="04-Others" text="04-Others"/>
+								</Select>
+							</VBox>
 						</VBox>
 
 					</layout:Grid>
 				</Panel>
 
-				<!-- ─── SECTION 2 · General & Header Information ──────────── -->
+				<!-- ─── SECTION 2 · Header Information ────────────────── -->
 				<Panel class="gpmsSection" expandable="false">
 					<headerToolbar>
 						<Toolbar class="gpmsSectionBar">
 							<core:Icon src="sap-icon://document-text" class="gpmsSectionBarIcon"/>
 							<Label text="Header Information" class="gpmsSectionBarLabel"/>
 							<ToolbarSpacer/>
-							<ObjectStatus 
-								text="{= ${gp>/GatePassNo} ? ${gp>/Status} : 'Draft' }" 
-								state="{= ${gp>/Status} === 'Approved' ? 'Success' : 'Warning' }" 
+							<ObjectStatus
+								text="{= ${gp>/GatePassNo} ? ${gp>/Status} : 'Draft' }"
+								state="{= ${gp>/Status} === 'Approved' ? 'Success' : 'Warning' }"
 								class="gpmsBadge"/>
 						</Toolbar>
 					</headerToolbar>
-					<layout:Grid defaultSpan="XL4 L4 M4 S12" vSpacing="1" hSpacing="1">
-						
+					<layout:Grid defaultSpan="XL3 L3 M6 S12" vSpacing="1" hSpacing="1">
+
+						<!-- ROW 1: Supplier | Plant Code | Remarks (spans 2 cols) -->
+						<VBox>
+							<Label text="Supplier" required="true" class="gpmsFieldLabel"/>
+							<ComboBox
+								id="vendorInput"
+								selectedKey="{gp>/vendor}"
+								placeholder="Search supplier..."
+								selectionChange=".onVendorSelect"
+								editable="{gp>/editable}"
+								class="gpmsFieldInput"
+								width="100%"
+								items="{path: 'vendors>/results', templateShareable: false}">
+								<core:ListItem key="{vendors>Vendor}" text="{vendors>VendorName}" additionalText="{vendors>Vendor}"/>
+							</ComboBox>
+						</VBox>
+
 						<VBox>
 							<Label text="Plant Code" required="true" class="gpmsFieldLabel"/>
 							<ComboBox
@@ -106,30 +169,10 @@
 						</VBox>
 
 						<VBox>
-							<Label text="Date" required="true" class="gpmsFieldLabel"/>
-							<DatePicker
-								id="gpDate"
-								dateValue="{gp>/gpDate}"
-								displayFormat="dd-MM-yyyy"
-								editable="{gp>/editable}"
-								class="gpmsFieldInput"
-								width="100%"/>
-						</VBox>
-
-						<VBox>
-							<Label text="Gatepass Number" class="gpmsFieldLabel"/>
-							<Input 
-								value="{gp>/GatePassNo}" 
-								editable="false" 
-								class="gpmsFieldInput gpmsFieldInputReadonly" 
-								width="100%"/>
-						</VBox>
-
-						<VBox>
 							<layoutData>
-								<layout:GridData span="XL8 L8 M12 S12"/>
+								<layout:GridData span="XL6 L6 M12 S12"/>
 							</layoutData>
-							<Label text="Comments/Remarks (Max 100 Char)" class="gpmsFieldLabel"/>
+							<Label text="Comments / Remarks (Max 100 Char)" class="gpmsFieldLabel"/>
 							<TextArea
 								value="{gp>/Remarks}"
 								placeholder="Enter remarks..."
@@ -141,34 +184,7 @@
 								width="100%"/>
 						</VBox>
 
-					</layout:Grid>
-				</Panel>
-
-				<!-- ─── SECTION 3 · Supplier & Transport Details ────────── -->
-				<Panel class="gpmsSection" expandable="false">
-					<headerToolbar>
-						<Toolbar class="gpmsSectionBar gpmsAccentBar">
-							<core:Icon src="sap-icon://shipping-status" class="gpmsSectionBarIcon"/>
-							<Label text="Supplier &amp; Transport Details" class="gpmsSectionBarLabel"/>
-						</Toolbar>
-					</headerToolbar>
-					<layout:Grid defaultSpan="XL4 L4 M4 S12" vSpacing="1" hSpacing="1">
-						
-						<VBox>
-							<Label text="Supplier" required="true" class="gpmsFieldLabel"/>
-							<ComboBox
-								id="vendorInput"
-								selectedKey="{gp>/vendor}"
-								placeholder="Search supplier..."
-								selectionChange=".onVendorSelect"
-								editable="{gp>/editable}"
-								class="gpmsFieldInput"
-								width="100%"
-								items="{path: 'vendors>/results', templateShareable: false}">
-								<core:ListItem key="{vendors>Vendor}" text="{vendors>VendorName}" additionalText="{vendors>Vendor}"/>
-							</ComboBox>
-						</VBox>
-
+						<!-- ROW 2: Supplier Name | Mode | Date | Gatepass No -->
 						<VBox>
 							<Label text="Supplier Name" class="gpmsFieldLabel"/>
 							<Input
@@ -178,28 +194,8 @@
 								width="100%"/>
 						</VBox>
 
-						<VBox visible="{= ${gp>/EntryModeIndex} === 0 }">
-							<Label text="PO Number" required="{= ${gp>/EntryModeIndex} === 0 }" class="gpmsFieldLabel"/>
-							<Input
-								value="{gp>/PurchaseOrder}"
-								placeholder="Enter PO number..."
-								editable="{gp>/editable}"
-								class="gpmsFieldInput"
-								width="100%"/>
-						</VBox>
-
 						<VBox>
-							<Label text="Customer Invoice number" class="gpmsFieldLabel"/>
-							<Input
-								value="{gp>/CustomerInvoice}"
-								placeholder="Enter Customer Invoice number..."
-								editable="{gp>/editable}"
-								class="gpmsFieldInput"
-								width="100%"/>
-						</VBox>
-
-						<VBox>
-							<Label text="Mode of dispatch" class="gpmsFieldLabel"/>
+							<Label text="Mode of Dispatch" class="gpmsFieldLabel"/>
 							<Select
 								selectedKey="{gp>/ModeOfDispatch}"
 								editable="{gp>/editable}"
@@ -212,6 +208,27 @@
 							</Select>
 						</VBox>
 
+						<VBox>
+							<Label text="Date" required="true" class="gpmsFieldLabel"/>
+							<DatePicker
+								id="gpDate"
+								dateValue="{gp>/gpDate}"
+								displayFormat="dd-MM-yyyy"
+								editable="{gp>/editable}"
+								class="gpmsFieldInput"
+								width="100%"/>
+						</VBox>
+
+						<VBox>
+							<Label text="Gatepass Number" class="gpmsFieldLabel"/>
+							<Input
+								value="{gp>/GatePassNo}"
+								editable="false"
+								class="gpmsFieldInput gpmsFieldInputReadonly"
+								width="100%"/>
+						</VBox>
+
+						<!-- ROW 3: Vehicle No | Driver Name | Customer Invoice | PO No -->
 						<VBox>
 							<Label text="Vehicle Number" class="gpmsFieldLabel"/>
 							<Input
@@ -232,40 +249,34 @@
 								width="100%"/>
 						</VBox>
 
-						<!-- Inward Dropdown -->
-						<VBox visible="{= ${gp>/DirectionIndex} === 0 }">
-							<Label text="Inward Category" class="gpmsFieldLabel"/>
-							<Select
-								selectedKey="{gp>/InwardCategory}"
+						<!-- Customer Invoice: visible only when HasCustomerInvoice is checked -->
+						<VBox visible="{gp>/HasCustomerInvoice}">
+							<Label text="Customer Invoice Number" class="gpmsFieldLabel"/>
+							<Input
+								value="{gp>/CustomerInvoice}"
+								placeholder="Enter Customer Invoice number..."
 								editable="{gp>/editable}"
 								class="gpmsFieldInput"
-								width="100%">
-								<core:Item key="01-Purchase order" text="01-Purchase order"/>
-								<core:Item key="02-Customer return" text="02-Customer return"/>
-								<core:Item key="03-Samples" text="03-Samples"/>
-								<core:Item key="04-Others" text="04-Others"/>
-							</Select>
+								width="100%"/>
 						</VBox>
 
-						<!-- Outward Dropdown -->
-						<VBox visible="{= ${gp>/DirectionIndex} === 1 }">
-							<Label text="Outward Category" class="gpmsFieldLabel"/>
-							<Select
-								selectedKey="{gp>/OutwardCategory}"
+						<!-- PO Number: visible only when HasPONumber is checked and not Manual mode -->
+						<VBox visible="{= !${gp>/IsManual} &amp;&amp; ${gp>/HasPONumber} }">
+							<Label text="PO Number" class="gpmsFieldLabel"/>
+							<Input
+								value="{gp>/PurchaseOrder}"
+								placeholder="Select PO number..."
 								editable="{gp>/editable}"
+								showValueHelp="true"
+								valueHelpRequest=".onPOValueHelp"
 								class="gpmsFieldInput"
-								width="100%">
-								<core:Item key="01-Service maintenance" text="01-Service maintenance"/>
-								<core:Item key="02-Customer sales" text="02-Customer sales"/>
-								<core:Item key="03-Vendor Returns" text="03-Vendor Returns"/>
-								<core:Item key="04-Others" text="04-Others"/>
-							</Select>
+								width="100%"/>
 						</VBox>
 
 					</layout:Grid>
 				</Panel>
 
-				<!-- ─── SECTION 4 · Table of Items ────────────── -->
+				<!-- ─── SECTION 3 · Item Information ──────────────────── -->
 				<Panel class="gpmsSection" expandable="false">
 					<headerToolbar>
 						<Toolbar class="gpmsSectionBar">
@@ -286,45 +297,45 @@
 						noDataText="No items added."
 						class="gpmsItemTable">
 						<columns>
-							<Column width="3rem" hAlign="Center"><Text text="#" class="gpmsHeaderText"/></Column>
-							
-							<!-- Material (SAP Code) - Visible if Entry Mode is System -->
-							<Column width="11rem" visible="{= ${gp>/EntryModeIndex} === 0 }">
+							<Column width="3rem" hAlign="Center">
+								<Text text="#" class="gpmsHeaderText"/>
+							</Column>
+
+							<!-- Material SAP Code: hidden in Manual mode -->
+							<Column width="11rem" visible="{= !${gp>/IsManual} }">
 								<Text text="Material" class="gpmsHeaderText"/>
 							</Column>
-							
-							<!-- Material Description - Always Visible -->
+
+							<!-- Material Description: always visible -->
 							<Column width="15rem">
 								<Text text="Material Description" class="gpmsHeaderText"/>
 							</Column>
-							
-							<!-- Qty - Always Visible -->
+
 							<Column width="7rem" hAlign="Right">
 								<Text text="Qty" class="gpmsHeaderText"/>
 							</Column>
-							
-							<!-- Uom - Always Visible -->
+
 							<Column width="6rem" hAlign="Center">
 								<Text text="UOM" class="gpmsHeaderText"/>
 							</Column>
-							
-							<!-- Expected Returnable Date -->
-							<!-- Visible if Outward AND ((RGP and System) OR (NRGP and Manual)) -->
-							<Column width="11rem" visible="{= ${gp>/DirectionIndex} === 1 &amp;&amp; ((${gp>/EntryModeIndex} === 0 &amp;&amp; ${gp>/TypeIndex} === 0) || (${gp>/EntryModeIndex} === 1 &amp;&amp; ${gp>/TypeIndex} === 1)) }">
-								<Text text="Expected Returnable date" class="gpmsHeaderText"/>
+
+							<!-- Expected Returnable Date:
+							     Outward + RGP + System  OR  Outward + NRGP + Manual -->
+							<Column width="11rem" visible="{= ${gp>/IsOutward} &amp;&amp; ((${gp>/IsReturnable} &amp;&amp; !${gp>/IsManual}) || (!${gp>/IsReturnable} &amp;&amp; ${gp>/IsManual})) }">
+								<Text text="Expected Returnable Date" class="gpmsHeaderText"/>
 							</Column>
 
-							<!-- Received Qty - Visible for Inward Returnable (RGP) -->
-							<Column width="7rem" hAlign="Right" visible="{= ${gp>/DirectionIndex} === 0 &amp;&amp; ${gp>/TypeIndex} === 0 }">
+							<!-- Received Qty: Inward + RGP only -->
+							<Column width="7rem" hAlign="Right" visible="{= ${gp>/IsInward} &amp;&amp; ${gp>/IsReturnable} }">
 								<Text text="Received Qty" class="gpmsHeaderText"/>
 							</Column>
 
-							<!-- Return Date - Visible for Inward Returnable (RGP) -->
-							<Column width="11rem" visible="{= ${gp>/DirectionIndex} === 0 &amp;&amp; ${gp>/TypeIndex} === 0 }">
-								<Text text="Return date" class="gpmsHeaderText"/>
+							<!-- Return Date: Inward + RGP only -->
+							<Column width="11rem" visible="{= ${gp>/IsInward} &amp;&amp; ${gp>/IsReturnable} }">
+								<Text text="Return Date" class="gpmsHeaderText"/>
 							</Column>
 
-							<!-- Rate & Amount (Optional / Hidden but kept for OData compatibility) -->
+							<!-- Rate / Amount hidden but kept for OData payload -->
 							<Column width="7rem" hAlign="Right" visible="false">
 								<Text text="Rate" class="gpmsHeaderText"/>
 							</Column>
@@ -332,15 +343,16 @@
 								<Text text="Amount" class="gpmsHeaderText"/>
 							</Column>
 
-							<!-- Actions -->
-							<Column width="4rem" hAlign="Center" visible="{gp>/editable}"><Text text="" class="gpmsHeaderText"/></Column>
+							<Column width="4rem" hAlign="Center" visible="{gp>/editable}">
+								<Text text="" class="gpmsHeaderText"/>
+							</Column>
 						</columns>
 						<items>
 							<ColumnListItem vAlign="Middle" class="gpmsItemRow">
 								<cells>
 									<Text text="{gp>sno}" class="gpmsSnoText"/>
 
-									<!-- Material Input (System Mode) -->
+									<!-- Material SAP Code (System mode) -->
 									<Input
 										value="{gp>material}"
 										showValueHelp="true"
@@ -350,32 +362,30 @@
 										width="100%"
 										placeholder="F4..."/>
 
-									<!-- Material Description -->
+									<!-- Material Description (editable only in Manual mode) -->
 									<Input
 										value="{gp>materialName}"
-										editable="{= ${gp>/EntryModeIndex} === 1 &amp;&amp; ${gp>/editable} }"
+										editable="{= ${gp>/IsManual} &amp;&amp; ${gp>/editable} }"
 										class="gpmsTableInput"
 										width="100%"
 										placeholder="Enter description..."/>
 
-									<!-- Quantity -->
-									<Input 
-										value="{gp>quantity}" 
-										type="Number" 
-										textAlign="Right" 
+									<Input
+										value="{gp>quantity}"
+										type="Number"
+										textAlign="Right"
 										editable="{gp>/editable}"
-										liveChange=".onQtyRateChange" 
+										liveChange=".onQtyRateChange"
 										class="gpmsTableInput"/>
 
-									<!-- UOM -->
-									<Input 
-										value="{gp>uom}" 
-										editable="{= ${gp>/EntryModeIndex} === 1 &amp;&amp; ${gp>/editable} }" 
-										class="gpmsTableInput" 
-										textAlign="Center" 
+									<!-- UOM (editable only in Manual mode) -->
+									<Input
+										value="{gp>uom}"
+										editable="{= ${gp>/IsManual} &amp;&amp; ${gp>/editable} }"
+										class="gpmsTableInput"
+										textAlign="Center"
 										placeholder="UOM..."/>
 
-									<!-- Expected Returnable Date -->
 									<DatePicker
 										dateValue="{gp>expectedReturnableDate}"
 										displayFormat="dd-MM-yyyy"
@@ -383,15 +393,13 @@
 										class="gpmsTableInput"
 										width="100%"/>
 
-									<!-- Received Qty -->
-									<Input 
-										value="{gp>receivedQty}" 
-										type="Number" 
-										textAlign="Right" 
+									<Input
+										value="{gp>receivedQty}"
+										type="Number"
+										textAlign="Right"
 										editable="{gp>/editable}"
 										class="gpmsTableInput"/>
 
-									<!-- Return Date -->
 									<DatePicker
 										dateValue="{gp>returnDate}"
 										displayFormat="dd-MM-yyyy"
@@ -399,12 +407,8 @@
 										class="gpmsTableInput"
 										width="100%"/>
 
-									<!-- Rate (Hidden) -->
 									<Input value="{gp>rate}" type="Number" textAlign="Right" liveChange=".onQtyRateChange" class="gpmsTableInput"/>
-
-									<!-- Amount (Hidden) -->
 									<Text text="{gp>amount}" class="gpmsAmountText" width="100%"/>
-
 									<Button icon="sap-icon://delete" type="Transparent" press=".onRemoveItem" class="gpmsDeleteBtn"/>
 								</cells>
 							</ColumnListItem>
@@ -416,30 +420,30 @@
 		</content>
 		<footer>
 			<OverflowToolbar class="gpmsFooterBar">
-				<Button 
-					text="Back to List" 
-					icon="sap-icon://back" 
-					press=".onNavBackToList" 
-					class="gpmsClearBtn" 
+				<Button
+					text="Back to List"
+					icon="sap-icon://back"
+					press=".onNavBackToList"
+					class="gpmsClearBtn"
 					visible="{= !${gp>/editable} }"/>
 				<ToolbarSpacer/>
-				<Button 
-					text="Clear All" 
-					icon="sap-icon://clear-all" 
-					press=".onClear" 
-					class="gpmsClearBtn" 
+				<Button
+					text="Clear All"
+					icon="sap-icon://clear-all"
+					press=".onClear"
+					class="gpmsClearBtn"
 					visible="{gp>/editable}"/>
-				<Button 
-					text="Print Gate Pass" 
-					icon="sap-icon://print" 
-					press=".onPrint" 
+				<Button
+					text="Print Gate Pass"
+					icon="sap-icon://print"
+					press=".onPrint"
 					type="Emphasized"
 					class="gpmsSubmitBtn sapUiSmallMarginEnd"/>
-				<Button 
-					text="Submit Gate Pass" 
-					icon="sap-icon://paper-plane" 
-					press=".onSubmit" 
-					class="gpmsSubmitBtn" 
+				<Button
+					text="Submit Gate Pass"
+					icon="sap-icon://paper-plane"
+					press=".onSubmit"
+					class="gpmsSubmitBtn"
 					visible="{gp>/editable}"/>
 			</OverflowToolbar>
 		</footer>

@@ -1,4 +1,4 @@
-﻿sap.ui.define([
+sap.ui.define([
 	"./BaseController",
 	"sap/ui/model/json/JSONModel",
 	"sap/m/MessageBox",
@@ -108,15 +108,27 @@
 			oGpModel.setProperty("/vendorGST", oData.VendorGST || "");
 			oGpModel.setProperty("/PurchaseOrder", oData.PurchaseOrder || "");
 			oGpModel.setProperty("/CustomerInvoice", oData.CustomerInvoice || "");
+			oGpModel.setProperty("/HasPONumber", !!(oData.PurchaseOrder));
+			oGpModel.setProperty("/HasCustomerInvoice", !!(oData.CustomerInvoice));
 			oGpModel.setProperty("/VehicleNo", oData.VehicleNo || "");
 			oGpModel.setProperty("/DriverName", oData.DriverName || "");
 			oGpModel.setProperty("/ModeOfDispatch", oData.ModeOfDispatch || "Road");
 
-			// Determine index properties
+			// Determine index + boolean properties
 			var sType = oData.GatePassType || "NRGP";
-			oGpModel.setProperty("/TypeIndex", sType === "RGP" ? 0 : 1);
-			oGpModel.setProperty("/DirectionIndex", oData.Direction === "Inward" ? 0 : 1);
-			oGpModel.setProperty("/EntryModeIndex", oData.EntryMode === "Manual" ? 1 : 0);
+			var bRGP = sType === "RGP";
+			oGpModel.setProperty("/TypeIndex", bRGP ? 0 : 1);
+			oGpModel.setProperty("/IsReturnable", bRGP);
+			oGpModel.setProperty("/IsNonReturnable", !bRGP);
+
+			var bInward = oData.Direction === "Inward";
+			oGpModel.setProperty("/DirectionIndex", bInward ? 0 : 1);
+			oGpModel.setProperty("/IsInward", bInward);
+			oGpModel.setProperty("/IsOutward", !bInward);
+
+			var bManual = oData.EntryMode === "Manual";
+			oGpModel.setProperty("/EntryModeIndex", bManual ? 1 : 0);
+			oGpModel.setProperty("/IsManual", bManual);
 
 			// Categorizations
 			oGpModel.setProperty("/InwardCategory", oData.InwardCategory || "01-Purchase order");
@@ -181,11 +193,21 @@
 				ModeOfDispatch: "Road",
 				VehicleNo: "",
 				DriverName: "",
-				
-				DirectionIndex: 1, // 0: Inward, 1: Outward (Default to Outward)
-				TypeIndex: 0,      // 0: Returnable, 1: Non-Returnable
-				EntryModeIndex: 0, // 0: System/PO, 1: Manual
-				
+
+				// Checkbox booleans (drive UI visibility)
+				IsInward: false,
+				IsOutward: true,
+				IsReturnable: true,
+				IsNonReturnable: false,
+				IsManual: false,
+				HasPONumber: false,
+				HasCustomerInvoice: false,
+
+				// Index mirrors kept for OData payload compatibility
+				DirectionIndex: 1,
+				TypeIndex: 0,
+				EntryModeIndex: 0,
+
 				InwardCategory: "01-Purchase order",
 				OutwardCategory: "01-Service maintenance",
 
@@ -212,38 +234,181 @@
 			};
 		},
 
-		onDirectionChange: function (oEvent) {
-			var iSelectedIndex = oEvent.getParameter("selectedIndex");
-			var oModel = this.getView().getModel("gp");
-			oModel.setProperty("/DirectionIndex", iSelectedIndex);
+		onInwardChange: function (oEvent) {
+			var bSelected = oEvent.getParameter("selected");
+			var oGpModel = this.getView().getModel("gp");
+			oGpModel.setProperty("/IsInward", bSelected);
+			if (bSelected) {
+				oGpModel.setProperty("/IsOutward", false);
+				oGpModel.setProperty("/DirectionIndex", 0);
+			}
 		},
 
-		onTypeChange: function (oEvent) {
-			var iSelectedIndex = oEvent.getParameter("selectedIndex");
-			var oModel = this.getView().getModel("gp");
-			oModel.setProperty("/TypeIndex", iSelectedIndex);
+		onOutwardChange: function (oEvent) {
+			var bSelected = oEvent.getParameter("selected");
+			var oGpModel = this.getView().getModel("gp");
+			oGpModel.setProperty("/IsOutward", bSelected);
+			if (bSelected) {
+				oGpModel.setProperty("/IsInward", false);
+				oGpModel.setProperty("/DirectionIndex", 1);
+			}
 		},
 
-		onEntryModeChange: function (oEvent) {
-			var iSelectedIndex = oEvent.getParameter("selectedIndex");
-			var oModel = this.getView().getModel("gp");
-			oModel.setProperty("/EntryModeIndex", iSelectedIndex);
+		onReturnableChange: function (oEvent) {
+			var bSelected = oEvent.getParameter("selected");
+			var oGpModel = this.getView().getModel("gp");
+			oGpModel.setProperty("/IsReturnable", bSelected);
+			if (bSelected) {
+				oGpModel.setProperty("/IsNonReturnable", false);
+				oGpModel.setProperty("/TypeIndex", 0);
+			}
+		},
 
-			if (iSelectedIndex === 1) { // Manual Mode selected
-				oModel.setProperty("/PurchaseOrder", "");
-				var aItems = oModel.getProperty("/items") || [];
+		onNonReturnableChange: function (oEvent) {
+			var bSelected = oEvent.getParameter("selected");
+			var oGpModel = this.getView().getModel("gp");
+			oGpModel.setProperty("/IsNonReturnable", bSelected);
+			if (bSelected) {
+				oGpModel.setProperty("/IsReturnable", false);
+				oGpModel.setProperty("/TypeIndex", 1);
+			}
+		},
+
+		onManualChange: function (oEvent) {
+			var bSelected = oEvent.getParameter("selected");
+			var oGpModel = this.getView().getModel("gp");
+			oGpModel.setProperty("/IsManual", bSelected);
+			oGpModel.setProperty("/EntryModeIndex", bSelected ? 1 : 0);
+			if (bSelected) {
+				oGpModel.setProperty("/PurchaseOrder", "");
+				oGpModel.setProperty("/HasPONumber", false);
+				var aItems = oGpModel.getProperty("/items") || [];
 				aItems.forEach(function (item) {
 					item.material = "";
 					item.materialName = "";
 					item.uom = "";
 				});
-				oModel.setProperty("/items", aItems);
+				oGpModel.setProperty("/items", aItems);
+			}
+		},
+
+		onPONumberCheckBoxSelect: function (oEvent) {
+			var bSelected = oEvent.getParameter("selected");
+			var oGpModel = this.getView().getModel("gp");
+			oGpModel.setProperty("/HasPONumber", bSelected);
+			if (!bSelected) {
+				oGpModel.setProperty("/PurchaseOrder", "");
+			}
+		},
+
+		onCustomerInvoiceNoCheckBoxSelect: function (oEvent) {
+			var bSelected = oEvent.getParameter("selected");
+			var oGpModel = this.getView().getModel("gp");
+			oGpModel.setProperty("/HasCustomerInvoice", bSelected);
+			if (!bSelected) {
+				oGpModel.setProperty("/CustomerInvoice", "");
 			}
 		},
 
 		onNavBackToList: function () {
 			this.getRouter().navTo("home");
 		},
+
+		onPOValueHelp: function () {
+			var oGpModel = this.getView().getModel("gp");
+			var sPlant = oGpModel.getProperty("/Plant");
+
+			if (!sPlant) {
+				MessageToast.show("Please select Plant Code first.");
+				return;
+			}
+
+			var oODataModel = this.getOwnerComponent().getModel();
+			if (!oODataModel) { return; }
+
+			var oPOModel = this.getView().getModel("pos");
+			if (!oPOModel) {
+				oPOModel = new JSONModel({ results: [] });
+				this.getView().setModel(oPOModel, "pos");
+			}
+
+			sap.ui.core.BusyIndicator.show(0);
+
+			oODataModel.read("/GateInPoHdrSet", {
+				urlParameters: { "$expand": "GateInPoNav", "$top": "500", "$filter": "Plant eq '" + sPlant + "'" },
+				success: function (oData) {
+					sap.ui.core.BusyIndicator.hide();
+					oPOModel.setProperty("/results", oData.results || []);
+
+					if (!this._pPOValueHelp) {
+						this._pPOValueHelp = sap.ui.core.Fragment.load({
+							id: this.getView().getId(),
+							name: "zaudgpms.audhatham.com.view.fragments.POValueHelp",
+							controller: this
+						}).then(function (oDialog) {
+							this.getView().addDependent(oDialog);
+							return oDialog;
+						}.bind(this));
+					}
+					this._pPOValueHelp.then(function (oDialog) {
+						oDialog.getBinding("items").filter([]);
+						oDialog.open();
+					});
+				}.bind(this),
+				error: function (oErr) {
+					sap.ui.core.BusyIndicator.hide();
+					var sMsg = "";
+					try { sMsg = JSON.parse(oErr.responseText).error.message.value; } catch (e) { sMsg = oErr.statusCode + " " + oErr.statusText; }
+					MessageToast.show("Failed to load POs: " + sMsg);
+				}
+			});
+		},
+
+		onPOValueHelpSearch: function (oEvent) {
+			var sValue = oEvent.getParameter("value");
+			var oFilter = new Filter({
+				filters: [
+					new Filter("PurchaseOrder", FilterOperator.Contains, sValue),
+					new Filter("VendorDesc", FilterOperator.Contains, sValue)
+				],
+				and: false
+			});
+			oEvent.getSource().getBinding("items").filter([oFilter]);
+		},
+
+		onPOValueHelpConfirm: function (oEvent) {
+			var oSelectedItem = oEvent.getParameter("selectedItem");
+			if (!oSelectedItem) { return; }
+
+			var oPO = oSelectedItem.getBindingContext("pos").getObject();
+			var oGpModel = this.getView().getModel("gp");
+
+			oGpModel.setProperty("/PurchaseOrder", oPO.PurchaseOrder || "");
+			oGpModel.setProperty("/vendor", oPO.Vendor || "");
+			oGpModel.setProperty("/vendorName", oPO.VendorDesc || "");
+
+			var aItems = [];
+			var aLines = (oPO.GateInPoNav && oPO.GateInPoNav.results) || [];
+			aLines.forEach(function (it, idx) {
+				aItems.push({
+					sno: String(idx + 1).padStart(2, '0'),
+					material: it.Material || "",
+					materialName: it.ItemDescription || "",
+					quantity: parseFloat(it.POQuantity || 0),
+					uom: it.UOM || "",
+					expectedReturnableDate: null,
+					receivedQty: parseFloat(it.RecievedQuantity || 0),
+					returnDate: null,
+					rate: 0,
+					amount: "0.00"
+				});
+			});
+			if (aItems.length > 0) {
+				oGpModel.setProperty("/items", aItems);
+			}
+		},
+
+		onPOValueHelpCancel: function () {},
 
 		_loadPlants: function () {
 			var oPlantModel = new JSONModel({ results: [] });
@@ -497,12 +662,22 @@
 					return;
 				}
 
+				if (!oGp.IsInward && !oGp.IsOutward) {
+					MessageBox.error("Please select a Direction — Inward or Outward.");
+					return;
+				}
+
+				if (!oGp.IsReturnable && !oGp.IsNonReturnable) {
+					MessageBox.error("Please select a Gate Pass Type — Returnable (RGP) or Non-Returnable (NRGP).");
+					return;
+				}
+
 				if (!oGp.vendor) {
 					MessageBox.error("Please select a Supplier.");
 					return;
 				}
 
-				if (oGp.EntryModeIndex === 0 && !oGp.PurchaseOrder) {
+				if (!oGp.IsManual && !oGp.PurchaseOrder) {
 					MessageBox.error("Please enter a PO Number.");
 					return;
 				}
@@ -518,7 +693,7 @@
 				};
 
 				var oPayload = {
-					GatePassType: oGp.TypeIndex === 0 ? "RGP" : "NRGP",
+					GatePassType: oGp.IsReturnable ? "RGP" : "NRGP",
 					Cocode: oGp.Cocode || "1000",
 					Plant: oGp.Plant,
 					GpDate: fnFormatDate(oGp.gpDate),
@@ -534,11 +709,10 @@
 					PurchaseOrder: oGp.PurchaseOrder || "",
 					CustomerInvoice: oGp.CustomerInvoice || "",
 					
-					// Excel Specific consolidations
-					Direction: oGp.DirectionIndex === 0 ? "Inward" : "Outward",
-					EntryMode: oGp.EntryModeIndex === 0 ? "System" : "Manual",
-					InwardCategory: oGp.DirectionIndex === 0 ? oGp.InwardCategory : "",
-					OutwardCategory: oGp.DirectionIndex === 1 ? oGp.OutwardCategory : "",
+					Direction: oGp.IsInward ? "Inward" : "Outward",
+					EntryMode: oGp.IsManual ? "Manual" : "System",
+					InwardCategory: oGp.IsInward ? oGp.InwardCategory : "",
+					OutwardCategory: oGp.IsOutward ? oGp.OutwardCategory : "",
 
 					GateReqItemNav: (oGp.items || []).map(function (it, index) {
 						var fQty = parseFloat(it.quantity) || 0;
@@ -546,7 +720,7 @@
 						var fValue = fQty * fRate;
 
 						return {
-							GatePassType: oGp.TypeIndex === 0 ? "RGP" : "NRGP",
+							GatePassType: oGp.IsReturnable ? "RGP" : "NRGP",
 							ItemNo: String((index + 1) * 10).padStart(5, '0'),
 							Material: it.material || "",
 							MaterialDesc: it.materialName || "",
@@ -627,9 +801,9 @@
 				return sum + (parseFloat(it.amount) || 0);
 			}, 0);
 
-			var sDir = oGp.DirectionIndex === 0 ? "INWARD" : "OUTWARD";
-			var sType = oGp.TypeIndex === 0 ? "RGP" : "NRGP";
-			var sTypeLabel = sDir + " " + (oGp.TypeIndex === 0 ? "RETURNABLE" : "NON-RETURNABLE") + " GATE PASS";
+			var sDir = oGp.IsInward ? "INWARD" : "OUTWARD";
+			var sType = oGp.IsReturnable ? "RGP" : "NRGP";
+			var sTypeLabel = sDir + " " + (oGp.IsReturnable ? "RETURNABLE" : "NON-RETURNABLE") + " GATE PASS";
 
 			// ── PAGE BORDER ──────────────────────────────────────────────────────
 			doc.setLineWidth(0.6);
@@ -698,7 +872,7 @@
 			// Left col top row — Please Allow
 			doc.setFontSize(8.5);
 			doc.setFont("helvetica", "normal");
-			doc.text(oGp.DirectionIndex === 0 ? "Please receive from:" : "Please allow:", lColX + pad, gridY + 6);
+			doc.text(oGp.IsInward ? "Please receive from:" : "Please allow:", lColX + pad, gridY + 6);
 			doc.setFont("helvetica", "bold");
 			doc.text(oGp.DriverName || "Mr./Ms.", lColX + 34, gridY + 6);
 
@@ -712,7 +886,7 @@
 			doc.setFont("helvetica", "italic");
 			doc.setFontSize(8);
 			
-			var sPremisesAction = oGp.DirectionIndex === 0 ? "to bring in the following material to Audhataam premises." : "to take out the following material from Audhataam premises.";
+			var sPremisesAction = oGp.IsInward ? "to bring in the following material to Audhataam premises." : "to take out the following material from Audhataam premises.";
 			doc.text(sPremisesAction, lColX + pad, gridY + gridH - 3.5);
 
 			// Right col — Document details

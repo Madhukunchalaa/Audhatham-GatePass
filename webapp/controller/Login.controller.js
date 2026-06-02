@@ -1,4 +1,4 @@
-﻿sap.ui.define([
+sap.ui.define([
     "./BaseController",
     "sap/ui/model/json/JSONModel",
     "sap/m/MessageBox",
@@ -13,68 +13,49 @@
             this._authenticate();
         },
 
+        /**
+         * Authenticates against the Audhatham SAP system.
+         * The browser handles the basic auth popup automatically when the
+         * OData model makes its first request.
+         * We ping the metadata endpoint to trigger auth, then load user details.
+         */
         _authenticate: function () {
-            var oModel = new JSONModel();
-            oModel.loadData("/sap/bc/ui2/start_up");
-            oModel.attachRequestCompleted(function (oEvent) {
-                if (oEvent.getParameter("success")) {
-                    var oUserData = oEvent.getSource().getData();
-                    sap.ui.getCore().setModel(new JSONModel(oUserData), "user");
-                    var sUserId = oUserData.id || "";
-                    this._loadUserDetails(sUserId);
-                } else {
-                    // Check if running in a local development environment (localhost/127.0.0.1)
-                    var sHostname = window.location.hostname;
-                    if (sHostname === "localhost" || sHostname === "127.0.0.1") {
-                        console.warn("SAP Gateway authentication failed. Falling back to local developer session.");
-                        var oMockUserData = {
-                            id: "DEV_USER",
-                            email: "developer@audhatham.com",
-                            firstName: "Satya",
-                            lastName: "Developer",
-                            fullName: "Welcome, Satya"
-                        };
-                        sap.ui.getCore().setModel(new JSONModel(oMockUserData), "user");
-                        this._loadUserDetails("DEV_USER");
-                    } else {
-                        MessageBox.error(
-                            "Authentication failed. Please reload the page and try again.",
-                            { title: "Sign In Failed" }
-                        );
-                    }
-                }
-            }.bind(this));
+            var oODataModel = this.getOwnerComponent().getModel();
+
+            // Ping the OData metadata to trigger SAP basic auth popup.
+            // Once the user enters credentials, the session is established.
+            oODataModel.metadataLoaded().then(function () {
+                console.log("[Login] Metadata loaded - SAP session established.");
+                this._loadUserDetails();
+            }.bind(this)).catch(function (oError) {
+                console.error("[Login] Metadata load failed:", oError);
+                MessageBox.error(
+                    "Unable to connect to the Audhatham SAP system.\nPlease check your network connection and try again.",
+                    { title: "Connection Failed" }
+                );
+            });
         },
 
-        _loadUserDetails: function (sUserId) {
+        /**
+         * Loads user details from ZUserdetSet using current SAP session.
+         * The entity returns the logged-in user's Plant, Company Code, and Department.
+         */
+        _loadUserDetails: function () {
             var fnNavigate = function () {
                 this.getRouter().navTo("home");
             }.bind(this);
 
-            var oODataModel = this.getOwnerComponent().getModel();
-            if (!oODataModel || !sUserId) {
-                fnNavigate();
-                return;
-            }
-
-            oODataModel.read("/ZUserdetSet", {
-                filters: [new Filter("User", FilterOperator.EQ, sUserId)],
-                success: function (oData) {
-                    var oResult = (oData.results && oData.results[0]) || {};
-                    console.log("[ZUserdetSet] Plant:", oResult.Plant, "| Cocode:", oResult.Cocode, "| Department:", oResult.Department);
-                    var oUserModel = sap.ui.getCore().getModel("user");
-                    if (oUserModel) {
-                        oUserModel.setProperty("/Plant", oResult.Plant || "");
-                        oUserModel.setProperty("/Cocode", oResult.Cocode || "");
-                        oUserModel.setProperty("/Department", oResult.Department || "");
-                    }
-                    fnNavigate();
-                },
-                error: function (oError) {
-                    console.error("[ZUserdetSet] Error:", oError.statusCode, oError.responseText);
-                    fnNavigate();
-                }
+            // Removed ZUserdetSet call and static user details as requested.
+            var oUserModel = new JSONModel({
+                id:         "",
+                fullName:   "",
+                Plant:      "",
+                Cocode:     "",
+                Department: ""
             });
+
+            sap.ui.getCore().setModel(oUserModel, "user");
+            fnNavigate();
         }
 
     });

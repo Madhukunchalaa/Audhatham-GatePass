@@ -1,4 +1,4 @@
-﻿sap.ui.define([
+sap.ui.define([
 	"sap/ui/thirdparty/jquery",
 	"./D3Chart",
 	"sap/ui/thirdparty/d3"

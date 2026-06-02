@@ -1,4 +1,4 @@
-﻿{
+{
 	"_version": "1.21.0",
 	"sap.app": {
 		"id": "zaudgpms.audhatham.com",
@@ -18,7 +18,7 @@
 		},
 		"dataSources": {
 			"mainService": {
-				"uri": "/sap/opu/odata/sap/ZSEPC_GATEPASS_SRV/",
+				"uri": "/sap/opu/odata/sap/ZMM_GATEPASS_SRV/",
 				"type": "OData",
 				"settings": {
 					"odataVersion": "2.0"
@@ -114,118 +114,6 @@
 					"name": "GatePassList",
 					"pattern": "GatePassList",
 					"target": "TargetGatePassList"
-				},
-				{
-					"name": "OutGatePass",
-					"pattern": "OutGatePass/:reqNo:/:gpNo:",
-					"target": [
-						"TargetOutGatePass"
-					]
-				},
-				{
-					"name": "reports",
-					"pattern": "reports",
-					"target": [
-						"TargetReports"
-					]
-				},
-				{
-					"name": "InwardGatePass",
-					"pattern": "InwardGatePass/:gpNo:",
-					"target": [
-						"TargetInwardGatePass"
-					]
-				},
-				{
-					"name": "analytics",
-					"pattern": "analytics",
-					"target": [
-						"TargetAnalytics"
-					]
-				},
-				{
-					"name": "NRGPList",
-					"pattern": "NRGPList",
-					"target": [
-						"TargetNRGPList"
-					]
-				},
-				{
-					"name": "NRGPDetail",
-					"pattern": "NRGPDetail/:gpNo:/:gpType:",
-					"target": [
-						"TargetNRGPDetail"
-					]
-				},
-				{
-					"name": "GatePassWithPO",
-					"pattern": "GatePassWithPO",
-					"target": [
-						"TargetGatePassWithPO"
-					]
-				},
-				{
-					"name": "IRGP",
-					"pattern": "IRGP/:step:/:gpNo:",
-					"target": [
-						"TargetIRGP"
-					]
-				},
-				{
-					"name": "PCPList",
-					"pattern": "PCPList",
-					"target": [
-						"TargetPCPList"
-					]
-				},
-				{
-					"name": "AshGatePassCreation",
-					"pattern": "AshGatePassCreation",
-					"target": [
-						"TargetAshGatePassCreation"
-					]
-				},
-				{
-					"name": "AshGatePassList",
-					"pattern": "AshGatePassList",
-					"target": [
-						"TargetAshGatePassList"
-					]
-				},
-				{
-					"name": "AshGatePassDetail",
-					"pattern": "AshGatePassDetail/:gpNo:",
-					"target": [
-						"TargetAshGatePassDetail"
-					]
-				},
-				{
-					"name": "ScrapRequestCreation",
-					"pattern": "ScrapRequestCreation",
-					"target": [
-						"TargetScrapRequestCreation"
-					]
-				},
-				{
-					"name": "ScrapRequestList",
-					"pattern": "ScrapRequestList",
-					"target": [
-						"TargetScrapRequestList"
-					]
-				},
-				{
-					"name": "ScrapRequestDetail",
-					"pattern": "ScrapRequestDetail/:gpNo:",
-					"target": [
-						"TargetScrapRequestDetail"
-					]
-				},
-				{
-					"name": "ScrapGatepassCreation",
-					"pattern": "ScrapGatepassCreation",
-					"target": [
-						"TargetScrapGatepassCreation"
-					]
 				}
 			],
 			"targets": {
@@ -248,86 +136,6 @@
 					"viewType": "XML",
 					"viewId": "GatePassList",
 					"viewName": "GatePassList"
-				},
-				"TargetOutGatePass": {
-					"viewType": "XML",
-					"viewId": "OutGatePass",
-					"viewName": "OutGatePass"
-				},
-				"TargetReports": {
-					"viewType": "XML",
-					"viewId": "Reports",
-					"viewName": "Reports"
-				},
-				"TargetInwardGatePass": {
-					"viewType": "XML",
-					"viewId": "InwardGatePass",
-					"viewName": "InwardGatePass"
-				},
-				"TargetAnalytics": {
-					"viewType": "XML",
-					"viewId": "Analytics",
-					"viewName": "Analytics"
-				},
-				"TargetNRGPList": {
-					"viewType": "XML",
-					"viewId": "NRGPList",
-					"viewName": "NRGPList"
-				},
-				"TargetNRGPDetail": {
-					"viewType": "XML",
-					"viewId": "NRGPDetail",
-					"viewName": "NRGPDetail"
-				},
-				"TargetGatePassWithPO": {
-					"viewType": "XML",
-					"viewId": "GatePassWithPO",
-					"viewName": "GatePassWithPO"
-				},
-				"TargetIRGP": {
-					"viewType": "XML",
-					"viewId": "IRGP",
-					"viewName": "IRGP"
-				},
-				"TargetPCPList": {
-					"viewType": "XML",
-					"viewId": "PCPList",
-					"viewName": "PCPList"
-				},
-				"TargetAshGatePassCreation": {
-					"viewType": "XML",
-					"viewId": "AshGatePassCreation",
-					"viewName": "AshGatePassCreation"
-				},
-				"TargetAshGatePassList": {
-					"viewType": "XML",
-					"viewId": "AshGatePassList",
-					"viewName": "AshGatePassList"
-				},
-				"TargetAshGatePassDetail": {
-					"viewType": "XML",
-					"viewId": "AshGatePassDetail",
-					"viewName": "AshGatePassDetail"
-				},
-				"TargetScrapRequestCreation": {
-					"viewType": "XML",
-					"viewId": "ScrapRequestCreation",
-					"viewName": "ScrapRequestCreation"
-				},
-				"TargetScrapRequestList": {
-					"viewType": "XML",
-					"viewId": "ScrapRequestList",
-					"viewName": "ScrapRequestList"
-				},
-				"TargetScrapRequestDetail": {
-					"viewType": "XML",
-					"viewId": "ScrapRequestDetail",
-					"viewName": "ScrapRequestDetail"
-				},
-				"TargetScrapGatepassCreation": {
-					"viewType": "XML",
-					"viewId": "ScrapGatepassCreation",
-					"viewName": "ScrapGatepassCreation"
 				}
 			}
 		}

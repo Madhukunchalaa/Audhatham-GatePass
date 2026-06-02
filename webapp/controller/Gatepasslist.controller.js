@@ -1,9 +1,10 @@
-﻿sap.ui.define([
+sap.ui.define([
 	"./BaseController",
 	"sap/ui/model/Filter",
 	"sap/ui/model/FilterOperator",
-	"sap/ui/model/json/JSONModel"
-], function (BaseController, Filter, FilterOperator, JSONModel) {
+	"sap/ui/model/json/JSONModel",
+	"sap/m/MessageBox"
+], function (BaseController, Filter, FilterOperator, JSONModel, MessageBox) {
 	"use strict";
 
 	return BaseController.extend("zaudgpms.audhatham.com.controller.GatePassList", {
@@ -173,6 +174,46 @@
 			if (!oItem.HODRemarks) return "HOD";
 			if (!oItem.STORERemarks) return "Store";
 			return "";
+		},
+
+		onApprovePress: function (oEvent) {
+			var oItem = oEvent.getSource().getBindingContext("gatePassList").getObject();
+			var oODataModel = this.getOwnerComponent().getModel();
+
+			sap.ui.core.BusyIndicator.show(0);
+
+			var sPath = oODataModel.createKey("/GateReqHdrSet", {
+				GatePassReqNo: oItem.GatePassReqNo,
+				GatePassType: oItem.GatePassType
+			});
+
+			oODataModel.update(sPath, {
+				GatePassReqNo: oItem.GatePassReqNo,
+				GatePassType: oItem.GatePassType,
+				ApprovalReq: "A",
+				Status: "Approved",
+				HODRemarks: "Approved from list view"
+			}, {
+				success: function () {
+					sap.ui.core.BusyIndicator.hide();
+					MessageBox.success("Gate Pass Request " + oItem.GatePassReqNo + " has been approved successfully!", {
+						onClose: function () {
+							var oCrossAppNavigator = sap.ushell && sap.ushell.Container && sap.ushell.Container.getService("CrossApplicationNavigation");
+							if (oCrossAppNavigator) {
+								oCrossAppNavigator.toExternal({
+									target: { shellHash: "#WorkflowTask-displayInbox" }
+								});
+							} else {
+								window.location.hash = "#WorkflowTask-displayInbox";
+							}
+						}
+					});
+				},
+				error: function () {
+					sap.ui.core.BusyIndicator.hide();
+					MessageBox.error("Failed to approve Gate Pass Request " + oItem.GatePassReqNo + ". Please try again.");
+				}
+			});
 		}
 
 	});

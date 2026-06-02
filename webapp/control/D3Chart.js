@@ -1,4 +1,4 @@
-﻿sap.ui.define([
+sap.ui.define([
 	"sap/ui/core/Control",
 	"sap/ui/core/HTML",
 	"sap/ui/core/ResizeHandler",

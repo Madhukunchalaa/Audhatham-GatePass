@@ -1,4 +1,4 @@
-﻿<mvc:View
+<mvc:View
     controllerName="zaudgpms.audhatham.com.controller.GatePassList"
     xmlns="sap.m"
     xmlns:mvc="sap.ui.core.mvc"
@@ -73,6 +73,9 @@
                     <Column width="10rem" minScreenWidth="Tablet" demandPopin="true">
                         <Text text="Pending At" />
                     </Column>
+                    <Column width="8rem" hAlign="Center">
+                        <Text text="Action" />
+                    </Column>
                 </columns>
 
                 <items>
@@ -91,6 +94,11 @@
                                 text="{= ${gatePassList>PendingAt} ? 'Pending at ' + ${gatePassList>PendingAt} : ''}"
                                 state="{= ${gatePassList>PendingAt} ? 'Warning' : 'None'}"
                                 icon="{= ${gatePassList>PendingAt} ? 'sap-icon://approvals' : ''}" />
+                            <Button
+                                text="Approve"
+                                type="Accept"
+                                press=".onApprovePress"
+                                visible="{= ${gatePassList>Status} === 'Pending' &amp;&amp; ${gatePassList>PendingAt} === 'HOD' }" />
                         </cells>
                     </ColumnListItem>
                 </items>
