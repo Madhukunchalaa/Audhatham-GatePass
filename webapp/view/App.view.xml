@@ -9,12 +9,6 @@
 	<App id="idRootApp" initialPage="idMainPage">
 		<pages>
 
-			<!-- ─── LOGIN PAGE ─── -->
-			<Page id="idLoginPage" showHeader="false" enableScrolling="false">
-				<NavContainer id="idLoginNavContainer"/>
-			</Page>
-
-			<!-- ─── MAIN APP PAGE ─── -->
 			<Page id="idMainPage" showHeader="false" enableScrolling="false">
 				<tnt:ToolPage id="idToolPage">
 					<tnt:header>

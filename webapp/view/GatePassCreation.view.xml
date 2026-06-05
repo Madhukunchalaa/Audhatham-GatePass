@@ -134,143 +134,191 @@
 								class="gpmsBadge"/>
 						</Toolbar>
 					</headerToolbar>
-					<layout:Grid defaultSpan="XL3 L3 M6 S12" vSpacing="1" hSpacing="1">
+					<layout:Grid defaultSpan="XL12 L12 M12 S12" vSpacing="1" hSpacing="1">
 
-						<!-- ROW 1: Supplier | Plant Code | Remarks (spans 2 cols) -->
-						<VBox>
-							<Label text="Supplier" required="true" class="gpmsFieldLabel"/>
-							<ComboBox
-								id="vendorInput"
-								selectedKey="{gp>/vendor}"
-								placeholder="Search supplier..."
-								selectionChange=".onVendorSelect"
-								editable="{gp>/editable}"
-								class="gpmsFieldInput"
-								width="100%"
-								items="{path: 'vendors>/results', templateShareable: false}">
-								<core:ListItem key="{vendors>Vendor}" text="{vendors>VendorName}" additionalText="{vendors>Vendor}"/>
-							</ComboBox>
-						</VBox>
-
-						<VBox>
-							<Label text="Plant Code" required="true" class="gpmsFieldLabel"/>
-							<ComboBox
-								id="plantSelect"
-								selectedKey="{gp>/Plant}"
-								items="{path: 'plants>/results'}"
-								selectionChange=".onPlantChange"
-								change=".onComboBoxPlantChange"
-								placeholder="Select Plant code..."
-								editable="{gp>/editable}"
-								class="gpmsFieldInput"
-								width="100%">
-								<core:ListItem key="{plants>Plant}" text="{plants>Plant} - {plants>PlantName}"/>
-							</ComboBox>
-						</VBox>
-
+						<!-- Left-Side Fields Container (9 columns out of 12) -->
 						<VBox>
 							<layoutData>
-								<layout:GridData span="XL6 L6 M12 S12"/>
+								<layout:GridData span="XL9 L9 M8 S12"/>
 							</layoutData>
-							<Label text="Comments / Remarks (Max 100 Char)" class="gpmsFieldLabel"/>
-							<TextArea
-								value="{gp>/Remarks}"
-								placeholder="Enter remarks..."
-								rows="2"
-								maxLength="100"
-								showExceededText="true"
-								editable="{gp>/editable}"
-								class="gpmsFieldInput"
-								width="100%"/>
+							<layout:Grid defaultSpan="XL12 L12 M12 S12" vSpacing="1" hSpacing="1" class="gpmsInnerGrid">
+
+								<!-- Row 1: Plant Code & PO / Customer Invoice -->
+								<VBox>
+									<layoutData>
+										<layout:GridData span="XL4 L4 M6 S12"/>
+									</layoutData>
+									<Label text="Plant Code" required="true" class="gpmsFieldLabel"/>
+									<ComboBox
+										id="plantSelect"
+										selectedKey="{gp>/Plant}"
+										items="{path: 'plants>/results'}"
+										selectionChange=".onPlantChange"
+										change=".onComboBoxPlantChange"
+										placeholder="Select Plant code..."
+										editable="{gp>/editable}"
+										class="gpmsFieldInput"
+										width="100%">
+										<core:ListItem key="{plants>Plant}" text="{plants>Plant} - {plants>PlantName}"/>
+									</ComboBox>
+								</VBox>
+
+								<VBox visible="{= (${gp>/HasCustomerInvoice} || (${gp>/HasPONumber} &amp;&amp; !${gp>/IsManual})) }">
+									<layoutData>
+										<layout:GridData span="XL4 L4 M6 S12"/>
+									</layoutData>
+									<!-- PO Number: visible only when HasPONumber is checked and not Manual mode -->
+									<VBox visible="{= !${gp>/IsManual} &amp;&amp; ${gp>/HasPONumber} }">
+										<Label text="PO Number" required="true" class="gpmsFieldLabel"/>
+										<Input
+											value="{gp>/PurchaseOrder}"
+											placeholder="Select PO number..."
+											editable="{gp>/editable}"
+											showValueHelp="true"
+											valueHelpRequest=".onPOValueHelp"
+											class="gpmsFieldInput"
+											width="100%"/>
+									</VBox>
+									<!-- Customer Invoice: visible only when HasCustomerInvoice is checked -->
+									<VBox visible="{gp>/HasCustomerInvoice}">
+										<Label text="Customer Invoice Number" required="true" class="gpmsFieldLabel"/>
+										<Input
+											value="{gp>/CustomerInvoice}"
+											placeholder="Enter Customer Invoice number..."
+											editable="{gp>/editable}"
+											class="gpmsFieldInput"
+											width="100%"/>
+									</VBox>
+								</VBox>
+
+								<!-- Row 2: Supplier & Supplier Name (Always side-by-side) -->
+								<VBox>
+									<layoutData>
+										<layout:GridData span="XL12 L12 M12 S12" linebreak="true"/>
+									</layoutData>
+									<layout:Grid defaultSpan="XL6 L6 M6 S12" vSpacing="0" hSpacing="1" class="gpmsInnerGrid">
+										<!-- Supplier -->
+										<VBox>
+											<Label text="Supplier" required="true" class="gpmsFieldLabel"/>
+											<ComboBox
+												id="vendorInput"
+												selectedKey="{gp>/vendor}"
+												placeholder="Search supplier..."
+												selectionChange=".onVendorSelect"
+												editable="{gp>/editable}"
+												class="gpmsFieldInput"
+												width="100%"
+												showSecondaryValues="true"
+												filterSecondaryValues="true"
+												items="{path: 'vendors>/results', templateShareable: false}">
+												<core:ListItem key="{vendors>Vendor}" text="{vendors>Vendor}" additionalText="{vendors>VendorName}"/>
+											</ComboBox>
+										</VBox>
+										<!-- Supplier Name -->
+										<VBox>
+											<Label text="Supplier Name" class="gpmsFieldLabel"/>
+											<Input
+												value="{gp>/vendorName}"
+												editable="{gp>/editable}"
+												class="gpmsFieldInput"
+												width="100%"/>
+										</VBox>
+									</layout:Grid>
+								</VBox>
+
+								<!-- Row 3: Dispatch Details -->
+								<VBox>
+									<layoutData>
+										<layout:GridData span="XL12 L12 M12 S12" linebreak="true"/>
+									</layoutData>
+									<layout:Grid defaultSpan="XL4 L4 M6 S12" vSpacing="0" hSpacing="1" class="gpmsInnerGrid">
+										<!-- Mode of Dispatch -->
+										<VBox>
+											<Label text="Mode of Dispatch" class="gpmsFieldLabel"/>
+											<Select
+												selectedKey="{gp>/ModeOfDispatch}"
+												editable="{gp>/editable}"
+												class="gpmsFieldInput"
+												width="100%">
+												<core:Item key="Road" text="By Road"/>
+												<core:Item key="Rail" text="By Rail"/>
+												<core:Item key="Air" text="By Air"/>
+												<core:Item key="Courier" text="By Courier"/>
+											</Select>
+										</VBox>
+										<!-- Vehicle Number -->
+										<VBox>
+											<Label text="Vehicle Number" class="gpmsFieldLabel"/>
+											<Input
+												value="{gp>/VehicleNo}"
+												placeholder="Enter Vehicle number..."
+												editable="{gp>/editable}"
+												class="gpmsFieldInput"
+												width="100%"/>
+										</VBox>
+										<!-- Driver Name -->
+										<VBox>
+											<Label text="Driver Name" class="gpmsFieldLabel"/>
+											<Input
+												value="{gp>/DriverName}"
+												placeholder="Enter Driver name..."
+												editable="{gp>/editable}"
+												class="gpmsFieldInput"
+												width="100%"/>
+										</VBox>
+									</layout:Grid>
+								</VBox>
+
+								<!-- Row 4: Comments / Remarks -->
+								<VBox>
+									<layoutData>
+										<layout:GridData span="XL12 L12 M12 S12" linebreak="true"/>
+									</layoutData>
+									<Label text="Comments / Remarks (Max 100 Char)" class="gpmsFieldLabel"/>
+									<TextArea
+										value="{gp>/Remarks}"
+										placeholder="Enter remarks..."
+										rows="2"
+										maxLength="100"
+										showExceededText="true"
+										editable="{gp>/editable}"
+										class="gpmsFieldInput"
+										width="100%"/>
+								</VBox>
+							</layout:Grid>
 						</VBox>
 
-						<!-- ROW 2: Supplier Name | Mode | Date | Gatepass No -->
+						<!-- Right-Side Fields Container (3 columns out of 12) -->
 						<VBox>
-							<Label text="Supplier Name" class="gpmsFieldLabel"/>
-							<Input
-								value="{gp>/vendorName}"
-								editable="{gp>/editable}"
-								class="gpmsFieldInput"
-								width="100%"/>
-						</VBox>
+							<layoutData>
+								<layout:GridData span="XL3 L3 M4 S12"/>
+							</layoutData>
+							<layout:Grid defaultSpan="XL12 L12 M12 S12" vSpacing="1" hSpacing="1" class="gpmsInnerGrid">
+								<!-- Gatepass Number (Search Input) -->
+								<VBox>
+									<Label text="Gatepass Number" class="gpmsFieldLabel"/>
+									<Input
+										value="{gp>/GatePassNo}"
+										editable="{= ${gp>/IsInward} &amp;&amp; ${gp>/editable} }"
+										showValueHelp="{gp>/IsInward}"
+										valueHelpRequest=".onGatePassNoChange"
+										change=".onGatePassNoChange"
+										class="gpmsFieldInput"
+										width="100%"/>
+								</VBox>
 
-						<VBox>
-							<Label text="Mode of Dispatch" class="gpmsFieldLabel"/>
-							<Select
-								selectedKey="{gp>/ModeOfDispatch}"
-								editable="{gp>/editable}"
-								class="gpmsFieldInput"
-								width="100%">
-								<core:Item key="Road" text="By Road"/>
-								<core:Item key="Rail" text="By Rail"/>
-								<core:Item key="Air" text="By Air"/>
-								<core:Item key="Courier" text="By Courier"/>
-							</Select>
-						</VBox>
-
-						<VBox>
-							<Label text="Date" required="true" class="gpmsFieldLabel"/>
-							<DatePicker
-								id="gpDate"
-								dateValue="{gp>/gpDate}"
-								displayFormat="dd-MM-yyyy"
-								editable="{gp>/editable}"
-								class="gpmsFieldInput"
-								width="100%"/>
-						</VBox>
-
-						<VBox>
-							<Label text="Gatepass Number" class="gpmsFieldLabel"/>
-							<Input
-								value="{gp>/GatePassNo}"
-								editable="false"
-								class="gpmsFieldInput gpmsFieldInputReadonly"
-								width="100%"/>
-						</VBox>
-
-						<!-- ROW 3: Vehicle No | Driver Name | Customer Invoice | PO No -->
-						<VBox>
-							<Label text="Vehicle Number" class="gpmsFieldLabel"/>
-							<Input
-								value="{gp>/VehicleNo}"
-								placeholder="Enter Vehicle number..."
-								editable="{gp>/editable}"
-								class="gpmsFieldInput"
-								width="100%"/>
-						</VBox>
-
-						<VBox>
-							<Label text="Driver Name" class="gpmsFieldLabel"/>
-							<Input
-								value="{gp>/DriverName}"
-								placeholder="Enter Driver name..."
-								editable="{gp>/editable}"
-								class="gpmsFieldInput"
-								width="100%"/>
-						</VBox>
-
-						<!-- Customer Invoice: visible only when HasCustomerInvoice is checked -->
-						<VBox visible="{gp>/HasCustomerInvoice}">
-							<Label text="Customer Invoice Number" class="gpmsFieldLabel"/>
-							<Input
-								value="{gp>/CustomerInvoice}"
-								placeholder="Enter Customer Invoice number..."
-								editable="{gp>/editable}"
-								class="gpmsFieldInput"
-								width="100%"/>
-						</VBox>
-
-						<!-- PO Number: visible only when HasPONumber is checked and not Manual mode -->
-						<VBox visible="{= !${gp>/IsManual} &amp;&amp; ${gp>/HasPONumber} }">
-							<Label text="PO Number" class="gpmsFieldLabel"/>
-							<Input
-								value="{gp>/PurchaseOrder}"
-								placeholder="Select PO number..."
-								editable="{gp>/editable}"
-								showValueHelp="true"
-								valueHelpRequest=".onPOValueHelp"
-								class="gpmsFieldInput"
-								width="100%"/>
+								<!-- Date -->
+								<VBox>
+									<Label text="Date" required="true" class="gpmsFieldLabel"/>
+									<DatePicker
+										id="gpDate"
+										dateValue="{gp>/gpDate}"
+										displayFormat="dd-MM-yyyy"
+										editable="{gp>/editable}"
+										class="gpmsFieldInput"
+										width="100%"/>
+								</VBox>
+							</layout:Grid>
 						</VBox>
 
 					</layout:Grid>
@@ -319,9 +367,8 @@
 								<Text text="UOM" class="gpmsHeaderText"/>
 							</Column>
 
-							<!-- Expected Returnable Date:
-							     Outward + RGP + System  OR  Outward + NRGP + Manual -->
-							<Column width="11rem" visible="{= ${gp>/IsOutward} &amp;&amp; ((${gp>/IsReturnable} &amp;&amp; !${gp>/IsManual}) || (!${gp>/IsReturnable} &amp;&amp; ${gp>/IsManual})) }">
+							<!-- Expected Returnable Date: Outward + RGP -->
+							<Column width="11rem" visible="{= ${gp>/IsOutward} &amp;&amp; ${gp>/IsReturnable} }">
 								<Text text="Expected Returnable Date" class="gpmsHeaderText"/>
 							</Column>
 

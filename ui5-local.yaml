@@ -1,9 +1,8 @@
-﻿# yaml-language-server: $schema=https://sap.github.io/ui5-tooling/schema/ui5.yaml.json
-
-specVersion: "4.0"
+﻿specVersion: "4.0"
 metadata:
   name: gpms.audhatham.com.zgpms
 type: application
+
 framework:
   name: SAPUI5
   version: 1.144.1
@@ -12,24 +11,14 @@ framework:
     - name: sap.ui.core
     - name: sap.ushell
     - name: themelib_sap_horizon
+
 server:
   customMiddleware:
-    - name: fiori-tools-appreload
-      afterMiddleware: compression
-      configuration:
-        port: 35729
-        path: webapp
-        delay: 300
-    - name: fiori-tools-preview
-      afterMiddleware: fiori-tools-appreload
-      configuration:
-        flp:
-          theme: sap_horizon
     - name: fiori-tools-proxy
       afterMiddleware: compression
       configuration:
-        ignoreCertErrors: true # If set to true, certificate errors will be ignored. E.g. self-signed certificates will be accepted
+        ignoreCertErrors: true
         backend:
           - path: /sap
-            url: https://sapasd.audhatham.com
-            client: '300'
+            url: https://10.245.2.33:44300
+            client: "110"

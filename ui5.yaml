@@ -1,9 +1,17 @@
-﻿# yaml-language-server: $schema=https://sap.github.io/ui5-tooling/schema/ui5.yaml.json
-
 specVersion: "4.0"
 metadata:
   name: gpms.audhatham.com.zgpms
 type: application
+
+framework:
+  name: SAPUI5
+  version: 1.144.1
+  libraries:
+    - name: sap.m
+    - name: sap.ui.core
+    - name: sap.ushell
+    - name: themelib_sap_horizon
+
 server:
   customMiddleware:
     - name: fiori-tools-proxy
@@ -12,23 +20,5 @@ server:
         ignoreCertErrors: true
         backend:
           - path: /sap
-            url: https://sapasd.audhatham.com
-            client: '300'
-        ui5:
-          path:
-            - /resources
-            - /test-resources
-          url: https://ui5.sap.com
-
-    - name: fiori-tools-appreload
-      afterMiddleware: compression
-      configuration:
-        port: 35729
-        path: webapp
-        delay: 300
-
-    - name: fiori-tools-preview
-      afterMiddleware: fiori-tools-appreload
-      configuration:
-        flp:
-          theme: sap_horizon
+            url: https://10.245.2.33:44300
+            client: "110"

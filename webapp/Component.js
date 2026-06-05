@@ -66,8 +66,15 @@ sap.ui.define([
 			};
 
 			oODataModel.read("/ZUserdetSet", {
-				success: function (oData) { fnApply((oData.results && oData.results[0]) || {}); },
-				error:   function ()       { fnApply({}); }
+				success: function (oData) {
+					var oRecord = (oData.results && oData.results[0]) || {};
+					console.log("[User] ZUserdetSet response:", JSON.stringify(oRecord));
+					fnApply(oRecord);
+				},
+				error: function (oErr) {
+					console.error("[User] ZUserdetSet failed:", oErr && oErr.responseText);
+					fnApply({});
+				}
 			});
 		},
 

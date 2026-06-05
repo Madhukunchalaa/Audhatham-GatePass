@@ -1066,6 +1066,11 @@
     margin-bottom: 4px !important;
 }
 
+.gpmsInnerGrid {
+    padding: 0 !important;
+}
+
+
 /* Custom PO Highlight Styling for RGP, PCP, Budget, and Cost fields */
 .gpmsPoHighlightedField.sapMInputBase .sapMInputBaseInner {
     border-left: 3.5px solid var(--navy-m) !important;

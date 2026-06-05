@@ -91,11 +91,6 @@
 			},
 			"routes": [
 				{
-					"name": "login",
-					"pattern": "login",
-					"target": "TargetLogin"
-				},
-				{
 					"name": "home",
 					"pattern": "",
 					"target": "TargetHome"
@@ -117,13 +112,6 @@
 				}
 			],
 			"targets": {
-				"TargetLogin": {
-					"viewType": "XML",
-					"viewId": "Login",
-					"viewName": "Login",
-					"controlId": "idLoginNavContainer",
-					"controlAggregation": "pages"
-				},
 				"TargetHome": {
 					"viewName": "Home",
 					"viewLevel": 1

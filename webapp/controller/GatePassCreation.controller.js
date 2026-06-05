@@ -106,6 +106,19 @@ sap.ui.define([
 			oGpModel.setProperty("/vendor", oData.Vendor || "");
 			oGpModel.setProperty("/vendorName", oData.VendorName || "");
 			oGpModel.setProperty("/vendorGST", oData.VendorGST || "");
+
+			// Ensure loaded vendor is in the vendors list so the ComboBox selectedKey resolves visually
+			if (oData.Vendor) {
+				var oVendorModel = this.getView().getModel("vendors");
+				if (oVendorModel) {
+					var aVendors = oVendorModel.getProperty("/results") || [];
+					var bExists = aVendors.some(function (v) { return v.Vendor === oData.Vendor; });
+					if (!bExists) {
+						aVendors = aVendors.concat([{ Vendor: oData.Vendor, VendorName: oData.VendorName || "" }]);
+						oVendorModel.setProperty("/results", aVendors);
+					}
+				}
+			}
 			oGpModel.setProperty("/PurchaseOrder", oData.PurchaseOrder || "");
 			oGpModel.setProperty("/CustomerInvoice", oData.CustomerInvoice || "");
 			oGpModel.setProperty("/HasPONumber", !!(oData.PurchaseOrder));
@@ -115,7 +128,7 @@ sap.ui.define([
 			oGpModel.setProperty("/ModeOfDispatch", oData.ModeOfDispatch || "Road");
 
 			// Determine index + boolean properties
-			var sType = oData.GatePassType || "NRGP";
+			var sType = oData.GatePassType || oData.Type || "NRGP";
 			var bRGP = sType === "RGP";
 			oGpModel.setProperty("/TypeIndex", bRGP ? 0 : 1);
 			oGpModel.setProperty("/IsReturnable", bRGP);
@@ -136,13 +149,14 @@ sap.ui.define([
 
 			// Fetch items
 			var aItems = [];
-			var results = (oData.GateReqItmNav && oData.GateReqItmNav.results) || (oData.GateReqItemNav && oData.GateReqItemNav.results) || [];
+			var results = (oData.GateReqItmNav && oData.GateReqItmNav.results) || (oData.GateReqItemNav && oData.GateReqItemNav.results) || (oData.ZRGPNRGPItmNav && oData.ZRGPNRGPItmNav.results) || [];
 			results.forEach(function (it, idx) {
+				var sExpDateStr = it.ExpectedReturnableDate || it.ReturnableDate;
 				var dExpected = null;
-				if (it.ExpectedReturnableDate && it.ExpectedReturnableDate !== "00000000") {
-					var y = it.ExpectedReturnableDate.substring(0, 4);
-					var m = it.ExpectedReturnableDate.substring(4, 6);
-					var d = it.ExpectedReturnableDate.substring(6, 8);
+				if (sExpDateStr && sExpDateStr !== "00000000") {
+					var y = sExpDateStr.substring(0, 4);
+					var m = sExpDateStr.substring(4, 6);
+					var d = sExpDateStr.substring(6, 8);
 					dExpected = new Date(y, parseInt(m, 10) - 1, parseInt(d, 10));
 				}
 				
@@ -154,17 +168,24 @@ sap.ui.define([
 					dRet = new Date(y, parseInt(m, 10) - 1, parseInt(d, 10));
 				}
 
+				// Quantity can be RequestedQuantity or Quantity or RecievedQuantity
+				var sQtyVal = it.RequestedQuantity || it.Quantity;
+				// If RGP was loaded, the quantity sent out was in RecievedQuantity!
+				if (sType === "RGP" && it.RecievedQuantity && it.RecievedQuantity !== "0.000" && it.RecievedQuantity !== " ") {
+					sQtyVal = it.RecievedQuantity;
+				}
+
 				aItems.push({
 					sno: String(idx + 1).padStart(2, '0'),
 					material: it.Material || "",
-					materialName: it.MaterialDesc || "",
-					quantity: parseFloat(it.RequestedQuantity || 1),
+					materialName: it.MaterialDesc || it.ItemDescription || "",
+					quantity: String(sQtyVal || ""),
 					uom: it.UOM || "",
 					expectedReturnableDate: dExpected,
-					receivedQty: parseFloat(it.ReceivedQuantity || 0),
+					receivedQty: parseFloat(it.ReceivedQuantity || it.RecievedQuantity || 0),
 					returnDate: dRet,
-					rate: parseFloat(it.ItemNetPrice || 0),
-					amount: parseFloat(it.Totalvalue || 0).toFixed(2)
+					rate: parseFloat(it.ItemNetPrice || it.rate || 0),
+					amount: parseFloat(it.Totalvalue || it.amount || 0).toFixed(2)
 				});
 			});
 			oGpModel.setProperty("/items", aItems);
@@ -224,10 +245,10 @@ sap.ui.define([
 				sno: String(iSno).padStart(2, '0'),
 				material: "",
 				materialName: "",
-				quantity: 1,
+				Quantity: "",
 				uom: "",
 				expectedReturnableDate: null,
-				receivedQty: 0,
+				receivedQty: "",
 				returnDate: null,
 				rate: 0,
 				amount: "0.00"
@@ -296,7 +317,10 @@ sap.ui.define([
 			var bSelected = oEvent.getParameter("selected");
 			var oGpModel = this.getView().getModel("gp");
 			oGpModel.setProperty("/HasPONumber", bSelected);
-			if (!bSelected) {
+			if (bSelected) {
+				oGpModel.setProperty("/HasCustomerInvoice", false);
+				oGpModel.setProperty("/CustomerInvoice", "");
+			} else {
 				oGpModel.setProperty("/PurchaseOrder", "");
 			}
 		},
@@ -305,26 +329,91 @@ sap.ui.define([
 			var bSelected = oEvent.getParameter("selected");
 			var oGpModel = this.getView().getModel("gp");
 			oGpModel.setProperty("/HasCustomerInvoice", bSelected);
-			if (!bSelected) {
+			if (bSelected) {
+				oGpModel.setProperty("/HasPONumber", false);
+				oGpModel.setProperty("/PurchaseOrder", "");
+			} else {
 				oGpModel.setProperty("/CustomerInvoice", "");
 			}
+		},
+
+		onGatePassNoChange: function (oEvent) {
+			var sGpNo = oEvent.getParameter("value") || oEvent.getSource().getValue();
+			sGpNo = (sGpNo || "").trim();
+			if (!sGpNo) { return; }
+
+			var oODataModel = this.getOwnerComponent().getModel();
+			if (!oODataModel) { return; }
+
+			sap.ui.core.BusyIndicator.show(0);
+			var that = this;
+
+			oODataModel.read("/ZRgpNrgpSet", {
+				filters: [
+					new Filter("GatePassNo", FilterOperator.EQ, sGpNo)
+				],
+				urlParameters: {
+					"$expand": "ZRGPNRGPItmNav"
+				},
+				success: function (oData) {
+					sap.ui.core.BusyIndicator.hide();
+					var oResult = oData && oData.results && oData.results[0];
+					if (oResult) {
+						var bEditable = that.getView().getModel("gp").getProperty("/editable");
+						var oGpModel = that.getView().getModel("gp");
+						var bCreateInwardRGP = bEditable && oGpModel.getProperty("/IsInward") && oGpModel.getProperty("/IsReturnable");
+
+						that._populateModelWithData(oResult);
+						
+						oGpModel.setProperty("/editable", bEditable);
+						oGpModel.setProperty("/GatePassNo", sGpNo);
+
+						if (bCreateInwardRGP) {
+							// Override Direction and Type to remain Inward RGP (since we are creating an Inward return of an Outward RGP)
+							oGpModel.setProperty("/DirectionIndex", 0);
+							oGpModel.setProperty("/IsInward", true);
+							oGpModel.setProperty("/IsOutward", false);
+
+							oGpModel.setProperty("/TypeIndex", 0);
+							oGpModel.setProperty("/IsReturnable", true);
+							oGpModel.setProperty("/IsNonReturnable", false);
+
+							// Keep the referenced Outward Gate Pass Number on the model
+							oGpModel.setProperty("/GatePassNo", sGpNo);
+						}
+						
+						MessageToast.show("Gate Pass details loaded.");
+					} else {
+						MessageBox.error("Gate Pass Number not found.");
+					}
+				},
+				error: function (oErr) {
+					sap.ui.core.BusyIndicator.hide();
+					var sMsg = "";
+					try {
+						var oResp = JSON.parse(oErr.responseText);
+						sMsg = oResp.error.message.value;
+					} catch (e) {
+						sMsg = oErr.message || oErr.statusText || "Unknown error";
+					}
+					MessageBox.error("Failed to load details: " + sMsg);
+				}
+			});
 		},
 
 		onNavBackToList: function () {
 			this.getRouter().navTo("home");
 		},
 
-		onPOValueHelp: function () {
+		onPOValueHelp: function (oEvent) {
 			var oGpModel = this.getView().getModel("gp");
 			var sPlant = oGpModel.getProperty("/Plant");
 
-			if (!sPlant) {
-				MessageToast.show("Please select Plant Code first.");
+			var oODataModel = this.getOwnerComponent().getModel();
+			if (!oODataModel) {
+				MessageToast.show("Backend OData service not connected.");
 				return;
 			}
-
-			var oODataModel = this.getOwnerComponent().getModel();
-			if (!oODataModel) { return; }
 
 			var oPOModel = this.getView().getModel("pos");
 			if (!oPOModel) {
@@ -334,31 +423,45 @@ sap.ui.define([
 
 			sap.ui.core.BusyIndicator.show(0);
 
+			var aFilters = [];
+			if (sPlant) {
+				aFilters.push(new sap.ui.model.Filter("Plant", sap.ui.model.FilterOperator.EQ, sPlant));
+			}
+
+			var that = this;
 			oODataModel.read("/GateInPoHdrSet", {
-				urlParameters: { "$expand": "GateInPoNav", "$top": "500", "$filter": "Plant eq '" + sPlant + "'" },
+				filters: aFilters,
+				urlParameters: {
+					"$expand": "GateInPoNav"
+				},
 				success: function (oData) {
 					sap.ui.core.BusyIndicator.hide();
-					oPOModel.setProperty("/results", oData.results || []);
+					var aResults = (oData && oData.results) || [];
+					oPOModel.setProperty("/results", aResults);
 
-					if (!this._pPOValueHelp) {
-						this._pPOValueHelp = sap.ui.core.Fragment.load({
-							id: this.getView().getId(),
+					if (!that._pPOValueHelp) {
+						sap.ui.core.Fragment.load({
+							id: that.getView().getId(),
 							name: "zaudgpms.audhatham.com.view.fragments.POValueHelp",
-							controller: this
+							controller: that
 						}).then(function (oDialog) {
-							this.getView().addDependent(oDialog);
-							return oDialog;
-						}.bind(this));
+							that._pPOValueHelp = oDialog;
+							that.getView().addDependent(that._pPOValueHelp);
+							that._pPOValueHelp.open();
+						});
+					} else {
+						that._pPOValueHelp.open();
 					}
-					this._pPOValueHelp.then(function (oDialog) {
-						oDialog.getBinding("items").filter([]);
-						oDialog.open();
-					});
-				}.bind(this),
+				},
 				error: function (oErr) {
 					sap.ui.core.BusyIndicator.hide();
 					var sMsg = "";
-					try { sMsg = JSON.parse(oErr.responseText).error.message.value; } catch (e) { sMsg = oErr.statusCode + " " + oErr.statusText; }
+					try {
+						var oResp = JSON.parse(oErr.responseText);
+						sMsg = oResp.error.message.value;
+					} catch (e) {
+						sMsg = oErr.message || oErr.statusText || "Unknown error";
+					}
 					MessageToast.show("Failed to load POs: " + sMsg);
 				}
 			});
@@ -387,17 +490,31 @@ sap.ui.define([
 			oGpModel.setProperty("/vendor", oPO.Vendor || "");
 			oGpModel.setProperty("/vendorName", oPO.VendorDesc || "");
 
+			// Ensure PO's vendor is in the vendors list so the ComboBox selectedKey resolves visually
+			if (oPO.Vendor) {
+				var oVendorModel = this.getView().getModel("vendors");
+				var aVendors = (oVendorModel && oVendorModel.getProperty("/results")) || [];
+				var bExists = aVendors.some(function (v) { return v.Vendor === oPO.Vendor; });
+				if (!bExists) {
+					aVendors = aVendors.concat([{ Vendor: oPO.Vendor, VendorName: oPO.VendorDesc || "" }]);
+					oVendorModel.setProperty("/results", aVendors);
+				}
+			}
+
 			var aItems = [];
 			var aLines = (oPO.GateInPoNav && oPO.GateInPoNav.results) || [];
+			if (aLines.length > 0) {
+				console.log("[PO Value Help Confirm] First PO item data structure:", JSON.stringify(aLines[0], null, 2));
+			}
 			aLines.forEach(function (it, idx) {
 				aItems.push({
 					sno: String(idx + 1).padStart(2, '0'),
-					material: it.Material || "",
-					materialName: it.ItemDescription || "",
-					quantity: parseFloat(it.POQuantity || 0),
+					material: it.Material || it.Item,
+					materialName: it.MaterialDesc || it.ItemDescription || it.MaterialName || it.Description || it.ShortText || "",
+					quantity: parseFloat(it.POQuantity || ""),
 					uom: it.UOM || "",
 					expectedReturnableDate: null,
-					receivedQty: parseFloat(it.RecievedQuantity || 0),
+					receivedQty: parseFloat(it.RecievedQuantity || ""),
 					returnDate: null,
 					rate: 0,
 					amount: "0.00"
@@ -491,15 +608,18 @@ sap.ui.define([
 				filters: aFilters,
 				success: function (oData) {
 					var aResults = oData.results || [];
+					if (aResults.length > 0) {
+						console.log("[ZVendorSet] sample record keys:", Object.keys(aResults[0]));
+					}
 					var aNormalized = aResults.map(function (v) {
 						return {
-							Vendor: v.Vendor || "",
-							VendorName: v.VendorName || "",
-							Street: v.Street || "",
+							Vendor: v.Vendor || v.VendorCode || "",
+							VendorName: v.VendorName || v.Name1 || v.NAME1 || v.VendorDesc || v.Name || "",
+							Street: v.Street || v.Street1 || "",
 							City: v.City || "",
-							PostalCode: v.PostalCode || "",
+							PostalCode: v.PostalCode || v.ZipCode || "",
 							Country: v.Country || "",
-							VendorGST: v.VendorGST || ""
+							VendorGST: v.VendorGST || v.GSTNumber || ""
 						};
 					});
 					oVendorModel.setProperty("/results", aNormalized);
@@ -616,7 +736,7 @@ sap.ui.define([
 			oModel.setProperty(sPath + "/uom", oSelectedMaterial.UOM);
 			oModel.setProperty(sPath + "/rate", oSelectedMaterial.UnitPrice);
 
-			var fQty = parseFloat(oModel.getProperty(sPath + "/quantity")) || 0;
+			var fQty = parseFloat(oModel.getProperty(sPath + "/quantity")) || "";
 			var fRate = parseFloat(oSelectedMaterial.UnitPrice) || 0;
 			oModel.setProperty(sPath + "/amount", (fQty * fRate).toFixed(2));
 		},
@@ -648,7 +768,7 @@ sap.ui.define([
 			var oModel = this.getView().getModel("gp");
 
 			var oItem = oContext.getObject();
-			var fQty = parseFloat(oItem.quantity) || 0;
+			var fQty = parseFloat(oItem.quantity) || "";
 			var fRate = parseFloat(oItem.rate) || 0;
 			oModel.setProperty(oContext.getPath() + "/amount", (fQty * fRate).toFixed(2));
 		},
@@ -677,10 +797,19 @@ sap.ui.define([
 					return;
 				}
 
-				if (!oGp.IsManual && !oGp.PurchaseOrder) {
+				if (oGp.HasPONumber && !oGp.PurchaseOrder) {
 					MessageBox.error("Please enter a PO Number.");
 					return;
 				}
+
+				if (oGp.HasCustomerInvoice && !oGp.CustomerInvoice) {
+					MessageBox.error("Please enter a Customer Invoice Number.");
+					return;
+				}
+
+				var sDirection = oGp.IsInward ? "Inward" : "Outward";
+				var sType      = oGp.IsReturnable ? "RGP" : "NRGP";
+				var sEntryMode = oGp.IsManual ? "Manual" : "System";
 
 				var fnFormatDate = function (oDate) {
 					if (!oDate) return "";
@@ -692,47 +821,74 @@ sap.ui.define([
 					return y + m + day;
 				};
 
+				var fnFormatDateISO = function (oDate) {
+					if (!oDate) return "";
+					var d = (oDate instanceof Date) ? oDate : new Date(oDate);
+					if (isNaN(d.getTime())) return "";
+					var y = d.getFullYear();
+					var m = String(d.getMonth() + 1).padStart(2, '0');
+					var day = String(d.getDate()).padStart(2, '0');
+					return y + "-" + m + "-" + day;
+				};
+
+				var sDocumentRef = "";
+				if (oGp.HasPONumber) {
+					sDocumentRef = "PO";
+				} else if (oGp.HasCustomerInvoice) {
+					sDocumentRef = "Customer Invoice No";
+				}
+
 				var oPayload = {
-					GatePassType: oGp.IsReturnable ? "RGP" : "NRGP",
-					Cocode: oGp.Cocode || "1000",
-					Plant: oGp.Plant,
-					GpDate: fnFormatDate(oGp.gpDate),
-					Vendor: oGp.vendor,
-					VendorName: oGp.vendorName || "",
-					VendorGST: oGp.vendorGST || "",
-					ApprovalReq: "X",
-					Department: "STORES",
-					VehicleNo: oGp.VehicleNo || "",
-					DriverName: oGp.DriverName || "",
-					ModeOfDispatch: oGp.ModeOfDispatch || "Road",
-					Remarks: oGp.Remarks || "",
-					PurchaseOrder: oGp.PurchaseOrder || "",
+					Direction:       sDirection,
+					Type:            sType,
+					EntryMode:       sEntryMode,
+					DocumentRef:     sDocumentRef,
+					Plant:           oGp.Plant,
+					GpDate:          fnFormatDate(oGp.gpDate),
+					GatePassNo:      oGp.GatePassNo || "",
+					Remarks:         oGp.Remarks || "",
+					Vendor:          oGp.vendor,
+					VendorName:      oGp.vendorName || "",
+					PurchaseOrder:   oGp.PurchaseOrder || "",
+					VehicleNo:       oGp.VehicleNo || "",
+					ModeOfDispatch:  (oGp.ModeOfDispatch || "ROAD").toUpperCase(),
+					DriverName:      oGp.DriverName || "",
+					InwardCategory:  oGp.IsInward  ? (oGp.InwardCategory  || "") : "",
+					OutwardCategory: oGp.IsOutward ? (oGp.OutwardCategory || "") : "",
 					CustomerInvoice: oGp.CustomerInvoice || "",
-					
-					Direction: oGp.IsInward ? "Inward" : "Outward",
-					EntryMode: oGp.IsManual ? "Manual" : "System",
-					InwardCategory: oGp.IsInward ? oGp.InwardCategory : "",
-					OutwardCategory: oGp.IsOutward ? oGp.OutwardCategory : "",
+					Message:         "",
 
-					GateReqItemNav: (oGp.items || []).map(function (it, index) {
-						var fQty = parseFloat(it.quantity) || 0;
-						var fRate = parseFloat(it.rate) || 0;
-						var fValue = fQty * fRate;
+					ZRGPNRGPItmNav: {
+						results: (oGp.items || []).map(function (it, index) {
+							var sQty = " ";
+							var sRecQty = "0.000";
+							if (sDirection === "Inward" && sType === "RGP") {
+								sRecQty = it.quantity ? parseFloat(it.quantity).toFixed(3) : "0.000";
+								if (it.receivedQty !== undefined && it.receivedQty !== "" && it.receivedQty !== null) {
+									sRecQty = parseFloat(it.receivedQty).toFixed(3);
+								}
+							} else {
+								sQty = it.quantity ? parseFloat(it.quantity).toFixed(3) : "0.000";
+								if (sType === "RGP" && it.receivedQty !== undefined && it.receivedQty !== "" && it.receivedQty !== null) {
+									sRecQty = parseFloat(it.receivedQty).toFixed(3);
+								}
+							}
 
-						return {
-							GatePassType: oGp.IsReturnable ? "RGP" : "NRGP",
-							ItemNo: String((index + 1) * 10).padStart(5, '0'),
-							Material: it.material || "",
-							MaterialDesc: it.materialName || "",
-							UOM: it.uom || "EA",
-							RequestedQuantity: fQty.toFixed(3),
-							ItemNetPrice: fRate.toFixed(2),
-							Totalvalue: fValue.toFixed(2),
-							ExpectedReturnableDate: it.expectedReturnableDate ? fnFormatDate(it.expectedReturnableDate) : "",
-							ReceivedQuantity: String(it.receivedQty || 0),
-							ReturnDate: it.returnDate ? fnFormatDate(it.returnDate) : ""
-						};
-					})
+							return {
+								Direction:        sDirection,
+								Type:             sType,
+								EntryMode:        sEntryMode,
+								GatePassNo:       oGp.GatePassNo || "",
+								ItemNo:           String((index + 1) * 10).padStart(5, '0'),
+								Material:         it.material || "",
+								ItemDescription:  it.materialName || "",
+								UOM:              it.uom || "EA",
+								RecievedQuantity: sRecQty,
+								Quantity:         sQty,
+								ReturnableDate:   fnFormatDate(it.expectedReturnableDate)
+							};
+						})
+					}
 				};
 
 				var oODataModel = this.getOwnerComponent().getModel();
@@ -744,10 +900,10 @@ sap.ui.define([
 				sap.ui.core.BusyIndicator.show(0);
 				var that = this;
 
-				oODataModel.create("/GatePassReqHdrSet", oPayload, {
+				oODataModel.create("/ZRgpNrgpSet", oPayload, {
 					success: function (oData) {
 						sap.ui.core.BusyIndicator.hide();
-						var sMsg = oData.Message || "Gate Pass created successfully!";
+						var sMsg = oData.Message;
 						MessageBox.success(sMsg, {
 							onClose: function () {
 								that.onNavBackToList();
@@ -759,7 +915,15 @@ sap.ui.define([
 						var sErrorMsg = "Failed to create Gate Pass.";
 						try {
 							var oResp = JSON.parse(oError.responseText);
-							sErrorMsg = oResp.error.message.value;
+							var oErr = oResp.error;
+							sErrorMsg = oErr.message.value;
+							// Extract deeper ABAP error details if available
+							var aDetails = oErr.innererror && oErr.innererror.errordetails;
+							if (aDetails && aDetails.length) {
+								var sDetail = aDetails.map(function (d) { return d.message; }).join("\n");
+								sErrorMsg = sDetail || sErrorMsg;
+							}
+							console.error("Gate Pass create error:", JSON.stringify(oErr, null, 2));
 						} catch (e) { }
 						MessageBox.error(sErrorMsg);
 					}
