@@ -860,7 +860,7 @@ sap.ui.define([
 
 					ZRGPNRGPItmNav: {
 						results: (oGp.items || []).map(function (it, index) {
-							var sQty = " ";
+							var sQty = "0.000";
 							var sRecQty = "0.000";
 							if (sDirection === "Inward" && sType === "RGP") {
 								sRecQty = it.quantity ? parseFloat(it.quantity).toFixed(3) : "0.000";
