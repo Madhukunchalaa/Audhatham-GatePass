@@ -374,6 +374,10 @@
 								<Text text="Qty" class="gpmsHeaderText"/>
 							</Column>
 
+							<Column width="7rem" hAlign="Right">
+								<Text text="No. of Packs" class="gpmsHeaderText"/>
+							</Column>
+
 							<Column width="6rem" hAlign="Center">
 								<Text text="UOM" class="gpmsHeaderText"/>
 							</Column>
@@ -436,6 +440,14 @@
 										editable="{gp>/editable}"
 										liveChange=".onQtyRateChange"
 										class="gpmsTableInput"/>
+
+									<Input
+										value="{gp>noOfPacks}"
+										type="Number"
+										textAlign="Right"
+										editable="{gp>/editable}"
+										class="gpmsTableInput"
+										placeholder="Packs..."/>
 
 									<!-- UOM -->
 									<Input
