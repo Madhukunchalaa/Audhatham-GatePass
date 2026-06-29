@@ -11,6 +11,13 @@ sap.ui.define([
 	return BaseController.extend("zaudgpms.audhatham.com.controller.GatePassCreation", {
 		
 		onInit: function () {
+			this._pPOValueHelp = null;
+			this._pMaterialValueHelp = null;
+			this._pCustomerValueHelp = null;
+			this._pInvoiceValueHelp = null;
+			this._oInputSource = null;
+			this._oRowContext = null;
+
 			this._resetModel();
 
 			var oODataModel = this.getOwnerComponent().getModel();
@@ -59,16 +66,13 @@ sap.ui.define([
 			sap.ui.core.BusyIndicator.show(0);
 			var that = this;
 
-			oODataModel.read("/GateReqHdrSet", {
+			oODataModel.read("/ZRgpNrgpSet", {
 				filters: [
-					new Filter({
-						filters: [
-							new Filter("GatePassReqNo", FilterOperator.EQ, sReqNo),
-							new Filter("GatePassNo", FilterOperator.EQ, sReqNo)
-						],
-						and: false
-					})
+					new Filter("GatePassNo", FilterOperator.EQ, sReqNo)
 				],
+				urlParameters: {
+					"$expand": "ZRGPNRGPItmNav"
+				},
 				success: function (oData) {
 					sap.ui.core.BusyIndicator.hide();
 					var oResult = oData && oData.results && oData.results[0];
@@ -94,12 +98,15 @@ sap.ui.define([
 			oGpModel.setProperty("/Plant", oData.Plant || "");
 			oGpModel.setProperty("/Cocode", oData.Cocode || "");
 			
-			// Date mapping
 			if (oData.GpDate) {
-				var y = oData.GpDate.substring(0, 4);
-				var m = oData.GpDate.substring(4, 6);
-				var d = oData.GpDate.substring(6, 8);
-				oGpModel.setProperty("/gpDate", new Date(y, parseInt(m, 10) - 1, parseInt(d, 10)));
+				if (oData.GpDate instanceof Date) {
+					oGpModel.setProperty("/gpDate", oData.GpDate);
+				} else if (typeof oData.GpDate === "string" && oData.GpDate.length >= 8) {
+					var y = oData.GpDate.substring(0, 4);
+					var m = oData.GpDate.substring(4, 6);
+					var d = oData.GpDate.substring(6, 8);
+					oGpModel.setProperty("/gpDate", new Date(y, parseInt(m, 10) - 1, parseInt(d, 10)));
+				}
 			}
 
 			oGpModel.setProperty("/Remarks", oData.Remarks || "");
@@ -211,6 +218,8 @@ sap.ui.define([
 				vendorGST: "",
 				PurchaseOrder: "",
 				CustomerInvoice: "",
+				CustomerNo: "",
+				CustomerName: "",
 				ModeOfDispatch: "Road",
 				VehicleNo: "",
 				DriverName: "",
@@ -332,8 +341,12 @@ sap.ui.define([
 			if (bSelected) {
 				oGpModel.setProperty("/HasPONumber", false);
 				oGpModel.setProperty("/PurchaseOrder", "");
+				oGpModel.setProperty("/vendor", "");
+				oGpModel.setProperty("/vendorName", "");
 			} else {
 				oGpModel.setProperty("/CustomerInvoice", "");
+				oGpModel.setProperty("/CustomerNo", "");
+				oGpModel.setProperty("/CustomerName", "");
 			}
 		},
 
@@ -409,6 +422,11 @@ sap.ui.define([
 			var oGpModel = this.getView().getModel("gp");
 			var sPlant = oGpModel.getProperty("/Plant");
 
+			if (!sPlant) {
+				MessageToast.show("Please select a Plant Code first.");
+				return;
+			}
+
 			var oODataModel = this.getOwnerComponent().getModel();
 			if (!oODataModel) {
 				MessageToast.show("Backend OData service not connected.");
@@ -423,17 +441,13 @@ sap.ui.define([
 
 			sap.ui.core.BusyIndicator.show(0);
 
-			var aFilters = [];
-			if (sPlant) {
-				aFilters.push(new sap.ui.model.Filter("Plant", sap.ui.model.FilterOperator.EQ, sPlant));
-			}
+			var sFilter = sPlant ? "Plant eq '" + sPlant + "'" : "";
+			var oUrlParams = { "$expand": "GateInPoNav", "$top": "500" };
+			if (sFilter) { oUrlParams["$filter"] = sFilter; }
 
 			var that = this;
 			oODataModel.read("/GateInPoHdrSet", {
-				filters: aFilters,
-				urlParameters: {
-					"$expand": "GateInPoNav"
-				},
+				urlParameters: oUrlParams,
 				success: function (oData) {
 					sap.ui.core.BusyIndicator.hide();
 					var aResults = (oData && oData.results) || [];
@@ -527,6 +541,356 @@ sap.ui.define([
 
 		onPOValueHelpCancel: function () {},
 
+		onPurchaseOrderInputSubmit: function (oEvent) {
+			this._fetchPOByNumber((oEvent.getParameter("value") || oEvent.getSource().getValue() || "").trim());
+		},
+
+		onPurchaseOrderInputChange: function (oEvent) {
+			this._fetchPOByNumber((oEvent.getParameter("value") || "").trim());
+		},
+
+		_fetchPOByNumber: function (sPO) {
+			if (!sPO) { return; }
+
+			var oGpModel = this.getView().getModel("gp");
+			var sPlant = oGpModel.getProperty("/Plant");
+			if (!sPlant) {
+				MessageToast.show("Please select a Plant Code first.");
+				return;
+			}
+
+			var oODataModel = this.getOwnerComponent().getModel();
+			if (!oODataModel) { return; }
+
+			sap.ui.core.BusyIndicator.show(0);
+			var that = this;
+			oODataModel.read("/GateInPoHdrSet", {
+				urlParameters: {
+					"$filter": "PurchaseOrder eq '" + sPO + "' and Plant eq '" + sPlant + "'",
+					"$expand": "GateInPoNav",
+					"$top": "1"
+				},
+				success: function (oData) {
+					sap.ui.core.BusyIndicator.hide();
+					var oPO = oData && oData.results && oData.results[0];
+					if (!oPO) {
+						MessageBox.error("PO Number '" + sPO + "' not found. Please check and try again.");
+					oGpModel.setProperty("/PurchaseOrder", "");
+						return;
+					}
+					oGpModel.setProperty("/PurchaseOrder", oPO.PurchaseOrder || sPO);
+					oGpModel.setProperty("/vendor", oPO.Vendor || "");
+					oGpModel.setProperty("/vendorName", oPO.VendorDesc || "");
+
+					if (oPO.Vendor) {
+						var oVendorModel = that.getView().getModel("vendors");
+						var aVendors = (oVendorModel && oVendorModel.getProperty("/results")) || [];
+						if (!aVendors.some(function (v) { return v.Vendor === oPO.Vendor; })) {
+							aVendors = aVendors.concat([{ Vendor: oPO.Vendor, VendorName: oPO.VendorDesc || "" }]);
+							oVendorModel.setProperty("/results", aVendors);
+						}
+					}
+
+					var aLines = (oPO.GateInPoNav && oPO.GateInPoNav.results) || [];
+					if (aLines.length > 0) {
+						var aItems = aLines.map(function (it, idx) {
+							return {
+								sno: String(idx + 1).padStart(2, '0'),
+								material: it.Material || it.Item || "",
+								materialName: it.MaterialDesc || it.ShortText || it.ItemDescription || "",
+								quantity: parseFloat(it.POQuantity || "") || "",
+								uom: it.UOM || "",
+								expectedReturnableDate: null,
+								receivedQty: parseFloat(it.RecievedQuantity || "") || "",
+								returnDate: null,
+								rate: 0,
+								amount: "0.00"
+							};
+						});
+						oGpModel.setProperty("/items", aItems);
+					}
+					MessageToast.show("PO details loaded.");
+				},
+				error: function (oErr) {
+					sap.ui.core.BusyIndicator.hide();
+					var sMsg = "";
+					try { sMsg = JSON.parse(oErr.responseText).error.message.value; } catch (e) { sMsg = oErr.message || "Error"; }
+					MessageToast.show("Failed to fetch PO: " + sMsg);
+				}
+			});
+		},
+
+		onCustomerInputSubmit: function (oEvent) {
+			this._fetchCustomerByNo((oEvent.getParameter("value") || oEvent.getSource().getValue() || "").trim());
+		},
+
+		onCustomerInputChange: function (oEvent) {
+			this._fetchCustomerByNo((oEvent.getParameter("value") || "").trim());
+		},
+
+		onCustomerInvoiceInputSubmit: function (oEvent) {
+			this._fetchCustomerByNo((oEvent.getParameter("value") || oEvent.getSource().getValue() || "").trim());
+		},
+
+		onCustomerInvoiceInputChange: function (oEvent) {
+			this._fetchCustomerByNo((oEvent.getParameter("value") || "").trim());
+		},
+
+		_fetchCustomerByNo: function (sCustomerNo) {
+			if (!sCustomerNo) { return; }
+
+			var oGpModel = this.getView().getModel("gp");
+
+			var sPlant = oGpModel.getProperty("/Plant");
+			if (!sPlant) {
+				MessageToast.show("Please select a Plant Code first.");
+				return;
+			}
+
+			var that = this;
+
+			var fnSearch = function () {
+				var oCustomerModel = that.getView().getModel("customers");
+				var aCustomers = (oCustomerModel && oCustomerModel.getProperty("/results")) || [];
+				var oFound = aCustomers.find(function (c) {
+					return (c.CustomerNo || "").toUpperCase() === sCustomerNo.toUpperCase();
+				});
+				if (oFound) {
+					oGpModel.setProperty("/CustomerNo", oFound.CustomerNo);
+					oGpModel.setProperty("/CustomerName", oFound.CustomerName);
+				} else {
+					MessageBox.error("Customer Number '" + sCustomerNo + "' not found. Please check and try again.");
+					oGpModel.setProperty("/CustomerNo", "");
+				}
+			};
+
+			// If customers already loaded, search immediately
+			var oCustomerModel = this.getView().getModel("customers");
+			var aCustomers = (oCustomerModel && oCustomerModel.getProperty("/results")) || [];
+			if (aCustomers.length > 0) {
+				fnSearch();
+				return;
+			}
+
+			// Load all customers for plant first, then search
+			var oODataModel = this.getOwnerComponent().getModel();
+			if (!oODataModel) { return; }
+
+			if (!oCustomerModel) {
+				oCustomerModel = new JSONModel({ results: [] });
+				this.getView().setModel(oCustomerModel, "customers");
+			}
+
+			sap.ui.core.BusyIndicator.show(0);
+			oODataModel.read("/ZCUSTOMERSet", {
+				urlParameters: { "$filter": "Plant eq '" + sPlant + "'", "$top": "500" },
+				success: function (oData) {
+					sap.ui.core.BusyIndicator.hide();
+					var aNormalized = (oData.results || []).map(function (c) {
+						return { CustomerNo: c.Customer || "", CustomerName: c.Name || "", City: c.City || "" };
+					});
+					oCustomerModel.setProperty("/results", aNormalized);
+					fnSearch();
+				},
+				error: function (oErr) {
+					sap.ui.core.BusyIndicator.hide();
+					var sMsg = "";
+					try { sMsg = JSON.parse(oErr.responseText).error.message.value; } catch (e) { sMsg = oErr.message || "Error"; }
+					MessageToast.show("Failed to load customers: " + sMsg);
+				}
+			});
+		},
+
+		onCustomerInvoiceValueHelp: function () {
+			var oGpModel = this.getView().getModel("gp");
+			var sPlant = oGpModel.getProperty("/Plant");
+
+			if (!sPlant) {
+				MessageToast.show("Please select a Plant Code first.");
+				return;
+			}
+
+			var oODataModel = this.getOwnerComponent().getModel();
+			if (!oODataModel) {
+				MessageToast.show("Backend OData service not connected.");
+				return;
+			}
+
+			this._loadCustomers(sPlant);
+
+			var that = this;
+			if (!this._pCustomerValueHelp) {
+				this._pCustomerValueHelp = sap.ui.core.Fragment.load({
+					id: that.getView().getId(),
+					name: "zaudgpms.audhatham.com.view.fragments.CustomerValueHelp",
+					controller: that
+				}).then(function (oDialog) {
+					that.getView().addDependent(oDialog);
+					return oDialog;
+				});
+			}
+
+			this._pCustomerValueHelp.then(function (oDialog) {
+				oDialog.getBinding("items").filter([]);
+				oDialog.open();
+			});
+		},
+
+		onCustomerValueHelpSearch: function (oEvent) {
+			var sValue = oEvent.getParameter("value");
+			var oFilter = new Filter({
+				filters: [
+					new Filter("CustomerNo", FilterOperator.Contains, sValue),
+					new Filter("CustomerName", FilterOperator.Contains, sValue)  // normalized field
+				],
+				and: false
+			});
+			oEvent.getSource().getBinding("items").filter([oFilter]);
+		},
+
+		onCustomerValueHelpConfirm: function (oEvent) {
+			var oSelectedItem = oEvent.getParameter("selectedItem");
+			if (!oSelectedItem) { return; }
+
+			var oCustomer = oSelectedItem.getBindingContext("customers").getObject();
+			var oGpModel = this.getView().getModel("gp");
+			oGpModel.setProperty("/CustomerNo", oCustomer.CustomerNo || "");
+			oGpModel.setProperty("/CustomerName", oCustomer.CustomerName || "");
+		},
+
+		onCustomerValueHelpCancel: function () {},
+
+		// ── Invoice (VBELN) Value Help ────────────────────────────────────
+		onInvoiceValueHelp: function () {
+			var oGpModel = this.getView().getModel("gp");
+			var sPlant = oGpModel.getProperty("/Plant");
+
+			if (!sPlant) {
+				MessageToast.show("Please select a Plant Code first.");
+				return;
+			}
+
+			var that = this;
+			var oODataModel = this.getOwnerComponent().getModel();
+			if (!oODataModel) { return; }
+
+			var oInvoiceModel = this.getView().getModel("invoices");
+			if (!oInvoiceModel) {
+				oInvoiceModel = new JSONModel({ results: [] });
+				this.getView().setModel(oInvoiceModel, "invoices");
+			}
+
+			sap.ui.core.BusyIndicator.show(0);
+
+			var aCandidates = [
+				"/Zcust_InvoiceSet",
+				"/ZcustInvoiceSet",
+				"/ZCUST_INVOICESet",
+				"/Zcust_invoiceSet",
+				"/Zcust_"
+			];
+
+			var fnTryLoad = function (index) {
+				if (index >= aCandidates.length) {
+					sap.ui.core.BusyIndicator.hide();
+					MessageToast.show("Failed to load invoices (no matching EntitySet found).");
+					return;
+				}
+
+				var sEntitySet = aCandidates[index];
+				console.log("[Invoice] Attempting to read from EntitySet:", sEntitySet);
+
+				oODataModel.read(sEntitySet, {
+					urlParameters: { "$filter": "Plant eq '" + sPlant + "'" },
+					success: function (oData) {
+						sap.ui.core.BusyIndicator.hide();
+						console.log("[Invoice] Successfully loaded from:", sEntitySet);
+						var aResults = (oData.results || []).map(function (r) {
+							return { VBELN: r.VBELN || "" };
+						});
+						oInvoiceModel.setProperty("/results", aResults);
+
+						if (!that._pInvoiceValueHelp) {
+							that._pInvoiceValueHelp = sap.ui.core.Fragment.load({
+								id: that.getView().getId(),
+								name: "zaudgpms.audhatham.com.view.fragments.InvoiceValueHelp",
+								controller: that
+							}).then(function (oDialog) {
+								that.getView().addDependent(oDialog);
+								return oDialog;
+							});
+						}
+						that._pInvoiceValueHelp.then(function (oDialog) {
+							oDialog.getBinding("items").filter([]);
+							oDialog.open();
+						});
+					},
+					error: function (oErr) {
+						console.warn("[Invoice] Failed to read from:", sEntitySet, "Error:", oErr && oErr.responseText);
+						fnTryLoad(index + 1);
+					}
+				});
+			};
+
+			fnTryLoad(0);
+		},
+
+		onInvoiceValueHelpSearch: function (oEvent) {
+			var sValue = oEvent.getParameter("value");
+			var oFilter = new Filter("VBELN", FilterOperator.Contains, sValue);
+			oEvent.getSource().getBinding("items").filter([oFilter]);
+		},
+
+		onInvoiceValueHelpConfirm: function (oEvent) {
+			var oSelectedItem = oEvent.getParameter("selectedItem");
+			if (!oSelectedItem) { return; }
+
+			var oInvoice = oSelectedItem.getBindingContext("invoices").getObject();
+			var oGpModel = this.getView().getModel("gp");
+			oGpModel.setProperty("/CustomerInvoice", oInvoice.VBELN || "");
+		},
+
+		onInvoiceValueHelpCancel: function () {},
+
+		_loadCustomers: function (sPlant) {
+			var oCustomerModel = this.getView().getModel("customers");
+			if (!oCustomerModel) {
+				oCustomerModel = new JSONModel({ results: [] });
+				this.getView().setModel(oCustomerModel, "customers");
+			}
+
+			if (!sPlant) {
+				oCustomerModel.setProperty("/results", []);
+				return;
+			}
+
+			var oODataModel = this.getOwnerComponent().getModel();
+			if (!oODataModel) { return; }
+
+			var oCustUrlParams = { "$top": "500" };
+			oCustUrlParams["$filter"] = "Plant eq '" + sPlant + "'";
+
+			sap.ui.core.BusyIndicator.show(0);
+			oODataModel.read("/ZCUSTOMERSet", {
+				urlParameters: oCustUrlParams,
+				success: function (oData) {
+					sap.ui.core.BusyIndicator.hide();
+					var aNormalized = (oData.results || []).map(function (c) {
+						return {
+							CustomerNo:   c.Customer || "",
+							CustomerName: c.Name     || "",
+							City:         c.City     || ""
+						};
+					});
+					oCustomerModel.setProperty("/results", aNormalized);
+				},
+				error: function () {
+					sap.ui.core.BusyIndicator.hide();
+					MessageToast.show("Failed to load customers.");
+				}
+			});
+		},
+
 		_loadPlants: function () {
 			var oPlantModel = new JSONModel({ results: [] });
 			this.getView().setModel(oPlantModel, "plants");
@@ -580,9 +944,10 @@ sap.ui.define([
 					var aNormalized = aResults.map(function (m) {
 						return {
 							Material: m.Material || "",
-							MaterialName: m.MaterialName || m.Description || "",
+							MaterialName: m.MaterialDesc || m.MaterialName || m.Description || "",
 							UOM: m.UOM || "",
-							UnitPrice: parseFloat(m.UnitPrice || 0)
+							UnitPrice: parseFloat(m.UnitPrice || 0),
+							HsnDesc: m.HSNDesc || ""
 						};
 					});
 					oMaterialsModel.setProperty("/results", aNormalized);
@@ -741,6 +1106,40 @@ sap.ui.define([
 			oModel.setProperty(sPath + "/amount", (fQty * fRate).toFixed(2));
 		},
 
+		onMaterialInputChange: function (oEvent) {
+			var oSource = oEvent.getSource();
+			var sCode = (oEvent.getParameter("value") || "").trim().toUpperCase();
+			var oContext = oSource.getBindingContext("gp");
+			var oModel = this.getView().getModel("gp");
+			var sPath = oContext.getPath();
+
+			if (!sCode) {
+				oModel.setProperty(sPath + "/materialName", "");
+				oModel.setProperty(sPath + "/uom", "");
+				oModel.setProperty(sPath + "/rate", 0);
+				oModel.setProperty(sPath + "/amount", "0.00");
+				return;
+			}
+
+			// Look up in already-loaded materials model first
+			var oMaterialsModel = this.getView().getModel("materials");
+			var aMaterials = (oMaterialsModel && oMaterialsModel.getProperty("/results")) || [];
+			var oFound = aMaterials.find(function (m) {
+				return (m.Material || "").toUpperCase() === sCode;
+			});
+
+			if (oFound) {
+				oModel.setProperty(sPath + "/material", oFound.Material);
+				oModel.setProperty(sPath + "/materialName", oFound.MaterialName);
+				oModel.setProperty(sPath + "/uom", oFound.UOM);
+				oModel.setProperty(sPath + "/rate", oFound.UnitPrice);
+				var fQty = parseFloat(oModel.getProperty(sPath + "/quantity")) || 0;
+				oModel.setProperty(sPath + "/amount", (fQty * (oFound.UnitPrice || 0)).toFixed(2));
+			} else {
+				MessageToast.show("Material '" + sCode + "' not found in plant materials list.");
+			}
+		},
+
 		onAddItem: function () {
 			var oGp = this.getView().getModel("gp");
 			var aItems = oGp.getProperty("/items") || [];
@@ -792,19 +1191,24 @@ sap.ui.define([
 					return;
 				}
 
-				if (!oGp.vendor) {
-					MessageBox.error("Please select a Supplier.");
-					return;
-				}
-
-				if (oGp.HasPONumber && !oGp.PurchaseOrder) {
-					MessageBox.error("Please enter a PO Number.");
-					return;
-				}
-
-				if (oGp.HasCustomerInvoice && !oGp.CustomerInvoice) {
-					MessageBox.error("Please enter a Customer Invoice Number.");
-					return;
+				if (oGp.HasCustomerInvoice) {
+					if (!oGp.CustomerNo) {
+						MessageBox.error("Please select a Customer.");
+						return;
+					}
+					if (!oGp.CustomerInvoice) {
+						MessageBox.error("Please enter a Customer Invoice Number.");
+						return;
+					}
+				} else {
+					if (!oGp.vendor) {
+						MessageBox.error("Please select a Supplier.");
+						return;
+					}
+					if (oGp.HasPONumber && !oGp.PurchaseOrder) {
+						MessageBox.error("Please enter a PO Number.");
+						return;
+					}
 				}
 
 				var sDirection = oGp.IsInward ? "Inward" : "Outward";
@@ -976,7 +1380,7 @@ sap.ui.define([
 			doc.rect(8.5, 6.5, pageWidth - 17, pageHeight - 13);
 
 			// ── HEADER ───────────────────────────────────────────────────────────
-			var sLogoUrl = sap.ui.require.toUrl("zgpms/audhatham/com/images/audhataam_logo.png");
+			var sLogoUrl = sap.ui.require.toUrl("zaudgpms/audhatham/com/images/audhataam_logo.png");
 			try {
 				var sLogoBase64 = await this._getImageBase64(sLogoUrl);
 				doc.addImage(sLogoBase64, 'PNG', margin, 9, 32, 12);
@@ -1068,9 +1472,6 @@ sap.ui.define([
 			ry += rLH;
 			doc.setFont("helvetica", "bold"); doc.text("Vehicle No:", rc, ry);
 			doc.setFont("helvetica", "normal"); doc.text(oGp.VehicleNo || "", rc + lblOff, ry);
-			ry += rLH;
-			doc.setFont("helvetica", "bold"); doc.text("Vendor GST:", rc, ry);
-			doc.setFont("helvetica", "normal"); doc.text(oGp.vendorGST || "", rc + lblOff, ry);
 
 			// ── ITEMS TABLE ──────────────────────────────────────────────────────
 			var tableData = (oGp.items || []).map(function (it, i) {
@@ -1079,16 +1480,14 @@ sap.ui.define([
 					it.materialName || "",
 					it.material || "",
 					parseFloat(it.quantity || 0).toLocaleString('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }),
-					it.uom || "",
-					parseFloat(it.rate || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-					parseFloat(it.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+					it.uom || ""
 				];
 			});
-			while (tableData.length < 6) { tableData.push(["", "", "", "", "", "", ""]); }
+			while (tableData.length < 6) { tableData.push(["", "", "", "", ""]); }
 
 			doc.autoTable({
 				startY: gridY + gridH + 1,
-				head: [['S.No', 'DESCRIPTION OF GOODS', 'Material Code', 'Quantity', 'UOM', 'Rate (Rs.)', 'Value (Rs.)']],
+				head: [['S.No', 'DESCRIPTION OF GOODS', 'Material Code', 'Quantity', 'UOM']],
 				body: tableData,
 				theme: 'grid',
 				headStyles: {
@@ -1113,33 +1512,17 @@ sap.ui.define([
 				columnStyles: {
 					0: { cellWidth: 14, halign: 'center' },
 					1: { cellWidth: 'auto', halign: 'left' },
-					2: { cellWidth: 26, halign: 'center' },
+					2: { cellWidth: 30, halign: 'center' },
 					3: { cellWidth: 30, halign: 'right' },
-					4: { cellWidth: 18, halign: 'center' },
-					5: { cellWidth: 30, halign: 'right' },
-					6: { cellWidth: 34, halign: 'right' }
+					4: { cellWidth: 22, halign: 'center' }
 				},
 				margin: { left: margin, right: margin }
 			});
 
 			var finalY = doc.lastAutoTable.finalY;
 
-			// ── IN WORDS + TOTAL ROW ─────────────────────────────────────────────
-			var footH = 9, totalColW = 64;
-			doc.setLineWidth(0.25);
-			doc.rect(margin, finalY, contentWidth, footH);
-			doc.line(pageWidth - margin - totalColW, finalY, pageWidth - margin - totalColW, finalY + footH);
-			doc.setFont("helvetica", "normal"); doc.setFontSize(8);
-			doc.text("In Words :  Rupees " + this._numberToWords(Math.round(fTotal)) + " Only.", margin + 3, finalY + 5.5);
-			doc.setFont("helvetica", "bold");
-			doc.text("Total Value (Rs.)", pageWidth - margin - totalColW + 3, finalY + 5.5);
-			doc.text(
-				fTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-				pageWidth - margin - 3, finalY + 5.5, { align: "right" }
-			);
-
 			// ── REMARKS ROW ──────────────────────────────────────────────────────
-			var remY = finalY + footH + 1, remH = 8;
+			var remY = finalY + 1, remH = 8;
 			doc.setLineWidth(0.25);
 			doc.rect(margin, remY, contentWidth, remH);
 			doc.line(margin + 28, remY, margin + 28, remY + remH);
@@ -1148,17 +1531,25 @@ sap.ui.define([
 			doc.setFont("helvetica", "normal");
 			doc.text(doc.splitTextToSize(oGp.Remarks || "NIL", contentWidth - 33), margin + 31, remY + 5);
 
+			// ── PURPOSE ROW ──────────────────────────────────────────────────────
+			var purY = remY + remH + 1, purH = 8;
+			doc.setLineWidth(0.25);
+			doc.rect(margin, purY, contentWidth, purH);
+			doc.line(margin + 28, purY, margin + 28, purY + purH);
+			doc.setFont("helvetica", "bold"); doc.setFontSize(8);
+			doc.text("Purpose:", margin + 3, purY + 5);
+			doc.setFont("helvetica", "normal");
+			doc.text("...............................................................................................................................", margin + 31, purY + 5);
+
 			// ── META INFO ROW ─────────────────────────────────────────────────────
-			var metaY = remY + remH + 3;
+			var metaY = purY + purH + 3;
 			doc.setFontSize(8);
-			// Row 1
 			doc.setFont("helvetica", "bold"); doc.text("Req. No:", margin, metaY);
 			doc.setFont("helvetica", "normal"); doc.text(oGp.GatePassReqNo || "Draft", margin + 18, metaY);
 			doc.setFont("helvetica", "bold"); doc.text("PO Number:", margin + 70, metaY);
 			doc.setFont("helvetica", "normal"); doc.text(oGp.PurchaseOrder || "N/A", margin + 90, metaY);
 			doc.setFont("helvetica", "bold"); doc.text("Mode:", margin + 150, metaY);
 			doc.setFont("helvetica", "normal"); doc.text(oGp.ModeOfDispatch || "Road", margin + 172, metaY);
-			// Row 2
 			metaY += 5;
 			doc.setFont("helvetica", "bold"); doc.text("Status:", margin, metaY);
 			doc.setFont("helvetica", "normal"); doc.text(oGp.Status || "Draft", margin + 24, metaY);
@@ -1167,21 +1558,39 @@ sap.ui.define([
 			doc.setFont("helvetica", "bold"); doc.text("Vehicle No:", margin + 150, metaY);
 			doc.setFont("helvetica", "normal"); doc.text(oGp.VehicleNo || "N/A", margin + 172, metaY);
 
-			// ── SIGNATURE SECTION ────────────────────────────────────────────────
-			var sigY = metaY + 16;
-			var sigLineW = 52;
-			var sigGap = (contentWidth - sigLineW * 4) / 3;
-			var sigPositions = [margin, margin + sigLineW + sigGap, margin + (sigLineW + sigGap) * 2, margin + (sigLineW + sigGap) * 3];
-			var sigLabels = ["Requested By", "HOD Approval", "Store In-Charge", "Security / Gate"];
+			// ── SIGNATURE TABLE (grid format) ────────────────────────────────────
+			var sigStartY = metaY + 8;
+			var sigLabels = [
+				"Initiator Sign\n& Date",
+				"HOD Sign\n& Date",
+				"Stores Sign\n& Date",
+				"Authorised\nSign",
+				"Security Sign\n& Date",
+				"Returned On\nDate",
+				"Security Sign\n& Date"
+			];
+			var sigColCount = sigLabels.length;
+			var sigColW = contentWidth / sigColCount;
+			var sigRowH = 18;
 
 			doc.setLineWidth(0.3);
-			sigPositions.forEach(function (sx) {
-				doc.line(sx, sigY, sx + sigLineW, sigY);
+			doc.rect(margin, sigStartY, contentWidth, sigRowH);
+			for (var sc = 1; sc < sigColCount; sc++) {
+				doc.line(margin + sigColW * sc, sigStartY, margin + sigColW * sc, sigStartY + sigRowH);
+			}
+			doc.setFont("helvetica", "bold"); doc.setFontSize(7);
+			sigLabels.forEach(function (label, i) {
+				var cx = margin + sigColW * i + sigColW / 2;
+				var lines = label.split("\n");
+				doc.text(lines[0], cx, sigStartY + sigRowH - 5, { align: "center" });
+				if (lines[1]) {
+					doc.text(lines[1], cx, sigStartY + sigRowH - 1.5, { align: "center" });
+				}
 			});
-			doc.setFont("helvetica", "bold"); doc.setFontSize(8);
-			sigPositions.forEach(function (sx, i) {
-				doc.text(sigLabels[i], sx + sigLineW / 2, sigY + 5, { align: "center" });
-			});
+
+			// ── FORMAT NUMBER ─────────────────────────────────────────────────────
+			doc.setFont("helvetica", "normal"); doc.setFontSize(6.5);
+			doc.text("Format No.: HR-013-F001-01-12/05/2025", margin, sigStartY + sigRowH + 5);
 
 			doc.save("GatePass_" + (oGp.GatePassNo || oGp.GatePassReqNo || "Draft") + ".pdf");
 			MessageToast.show("Gate Pass PDF generated.");

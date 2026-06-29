@@ -13,17 +13,15 @@
                         liveChange=".onSearchFieldLiveChange" />
                 </contentLeft>
                 <contentMiddle>
-                    <Select id="idStatusFilterSelect" width="11rem" change=".onSelectFilterChange">
-                        <core:Item key="" text="All Status" />
-                        <core:Item key="Approved" text="Approved" />
-                        <core:Item key="Pending" text="Pending" />
-                        <core:Item key="Rejected" text="Rejected" />
-                    </Select>
                     <Select id="idTypeFilterSelect" width="11rem" change=".onSelectFilterChange">
                         <core:Item key="" text="All Types" />
                         <core:Item key="NRGP" text="NRGP" />
                         <core:Item key="RGP" text="RGP" />
-                        <core:Item key="GP with PO" text="GP with PO" />
+                    </Select>
+                    <Select id="idDirectionFilterSelect" width="11rem" change=".onSelectFilterChange">
+                        <core:Item key="" text="All Directions" />
+                        <core:Item key="Inward" text="Inward" />
+                        <core:Item key="Outward" text="Outward" />
                     </Select>
                 </contentMiddle>
                 <contentRight>
@@ -49,56 +47,39 @@
                 </headerToolbar>
 
                 <columns>
-                    <Column>
+                    <Column width="10rem">
                         <Text text="Gate Pass No." />
+                    </Column>
+                    <Column width="6rem">
+                        <Text text="Direction" />
                     </Column>
                     <Column width="6rem">
                         <Text text="Type" />
                     </Column>
-                    <Column width="8rem">
-                        <Text text="Status" />
-                    </Column>
-                    <Column width="6rem">
+                    <Column width="5rem">
                         <Text text="Plant" />
                     </Column>
-                    <Column minScreenWidth="Tablet" demandPopin="true">
+                    <Column>
                         <Text text="Vendor Name" />
                     </Column>
-                    <Column width="12rem" minScreenWidth="Tablet" demandPopin="true">
-                        <Text text="Department" />
+                    <Column width="8rem">
+                        <Text text="Date" />
                     </Column>
-                    <Column width="12rem" minScreenWidth="Small" demandPopin="true">
+                    <Column width="8rem">
                         <Text text="Vehicle No." />
-                    </Column>
-                    <Column width="10rem" minScreenWidth="Tablet" demandPopin="true">
-                        <Text text="Pending At" />
-                    </Column>
-                    <Column width="8rem" hAlign="Center">
-                        <Text text="Action" />
                     </Column>
                 </columns>
 
                 <items>
                     <ColumnListItem type="Navigation" press=".onColumnListItemPress">
                         <cells>
-                            <ObjectIdentifier title="{gatePassList>GatePassReqNo}" />
+                            <ObjectIdentifier title="{gatePassList>GatePassNo}" />
+                            <Text text="{gatePassList>Direction}" />
                             <Text text="{gatePassList>GatePassType}" />
-                            <ObjectStatus
-                                text="{gatePassList>Status}"
-                                state="{= ${gatePassList>Status} === 'Approved' ? 'Success' : ${gatePassList>Status} === 'Rejected' ? 'Error' : 'Warning'}" />
                             <Text text="{gatePassList>Plant}" />
                             <Text text="{gatePassList>VendorName}" />
-                            <Text text="{gatePassList>Department}" />
+                            <Text text="{gatePassList>GpDate}" />
                             <Text text="{gatePassList>VehicleNo}" />
-                            <ObjectStatus
-                                text="{= ${gatePassList>PendingAt} ? 'Pending at ' + ${gatePassList>PendingAt} : ''}"
-                                state="{= ${gatePassList>PendingAt} ? 'Warning' : 'None'}"
-                                icon="{= ${gatePassList>PendingAt} ? 'sap-icon://approvals' : ''}" />
-                            <Button
-                                text="Approve"
-                                type="Accept"
-                                press=".onApprovePress"
-                                visible="{= ${gatePassList>Status} === 'Pending' &amp;&amp; ${gatePassList>PendingAt} === 'HOD' }" />
                         </cells>
                     </ColumnListItem>
                 </items>

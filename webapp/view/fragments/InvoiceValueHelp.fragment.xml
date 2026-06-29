@@ -1,0 +1,27 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core">
+	<TableSelectDialog
+		id="invoiceValueHelpDialog"
+		title="Select Invoice Number"
+		noDataText="No Invoices Found"
+		search=".onInvoiceValueHelpSearch"
+		confirm=".onInvoiceValueHelpConfirm"
+		cancel=".onInvoiceValueHelpCancel"
+		items="{path: 'invoices>/results'}">
+		<columns>
+			<Column width="100%">
+				<header>
+					<Text text="Invoice Number (VBELN)" />
+				</header>
+			</Column>
+		</columns>
+		<items>
+			<ColumnListItem type="Active">
+				<cells>
+					<Text text="{invoices>VBELN}" />
+				</cells>
+			</ColumnListItem>
+		</items>
+	</TableSelectDialog>
+</core:FragmentDefinition>

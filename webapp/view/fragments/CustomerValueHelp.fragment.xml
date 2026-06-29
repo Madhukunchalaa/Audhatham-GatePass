@@ -1,0 +1,33 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core">
+	<TableSelectDialog
+		id="customerValueHelpDialog"
+		title="Select Customer"
+		noDataText="No Customers Found"
+		search=".onCustomerValueHelpSearch"
+		confirm=".onCustomerValueHelpConfirm"
+		cancel=".onCustomerValueHelpCancel"
+		items="{path: 'customers>/results'}">
+		<columns>
+			<Column width="35%">
+				<header>
+					<Text text="Customer No" />
+				</header>
+			</Column>
+			<Column width="65%">
+				<header>
+					<Text text="Customer Name" />
+				</header>
+			</Column>
+		</columns>
+		<items>
+			<ColumnListItem type="Active">
+				<cells>
+					<Text text="{customers>CustomerNo}" />
+					<Text text="{customers>CustomerName}" />
+				</cells>
+			</ColumnListItem>
+		</items>
+	</TableSelectDialog>
+</core:FragmentDefinition>

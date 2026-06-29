@@ -176,6 +176,8 @@
 											editable="{gp>/editable}"
 											showValueHelp="true"
 											valueHelpRequest=".onPOValueHelp"
+											submit=".onPurchaseOrderInputSubmit"
+											change=".onPurchaseOrderInputChange"
 											class="gpmsFieldInput"
 											width="100%"/>
 									</VBox>
@@ -186,13 +188,15 @@
 											value="{gp>/CustomerInvoice}"
 											placeholder="Enter Customer Invoice number..."
 											editable="{gp>/editable}"
+											showValueHelp="true"
+											valueHelpRequest=".onInvoiceValueHelp"
 											class="gpmsFieldInput"
 											width="100%"/>
 									</VBox>
 								</VBox>
 
-								<!-- Row 2: Supplier & Supplier Name (Always side-by-side) -->
-								<VBox>
+																				<!-- Row 2: Supplier / Customer (swaps based on Customer Invoice checkbox) -->
+								<VBox visible="{= !${gp>/HasCustomerInvoice} }">
 									<layoutData>
 										<layout:GridData span="XL12 L12 M12 S12" linebreak="true"/>
 									</layoutData>
@@ -201,27 +205,34 @@
 										<VBox>
 											<Label text="Supplier" required="true" class="gpmsFieldLabel"/>
 											<ComboBox
-												id="vendorInput"
-												selectedKey="{gp>/vendor}"
-												placeholder="Search supplier..."
-												selectionChange=".onVendorSelect"
-												editable="{gp>/editable}"
-												class="gpmsFieldInput"
-												width="100%"
-												showSecondaryValues="true"
-												filterSecondaryValues="true"
-												items="{path: 'vendors>/results', templateShareable: false}">
+												id="vendorInput" selectedKey="{gp>/vendor}" placeholder="Search supplier..." selectionChange=".onVendorSelect" editable="{gp>/editable}" class="gpmsFieldInput" width="100%" showSecondaryValues="true" filterSecondaryValues="true" items="{path: 'vendors>/results', templateShareable: false}">
 												<core:ListItem key="{vendors>Vendor}" text="{vendors>Vendor}" additionalText="{vendors>VendorName}"/>
 											</ComboBox>
 										</VBox>
 										<!-- Supplier Name -->
 										<VBox>
 											<Label text="Supplier Name" class="gpmsFieldLabel"/>
+											<Input value="{gp>/vendorName}" editable="{gp>/editable}" class="gpmsFieldInput" width="100%"/>
+										</VBox>
+									</layout:Grid>
+								</VBox>
+
+								<!-- Row 2b: Customer (visible when Customer Invoice is checked) -->
+								<VBox visible="{gp>/HasCustomerInvoice}">
+									<layoutData>
+										<layout:GridData span="XL12 L12 M12 S12" linebreak="true"/>
+									</layoutData>
+									<layout:Grid defaultSpan="XL6 L6 M6 S12" vSpacing="0" hSpacing="1" class="gpmsInnerGrid">
+										<!-- Customer -->
+										<VBox>
+											<Label text="Customer" required="true" class="gpmsFieldLabel"/>
 											<Input
-												value="{gp>/vendorName}"
-												editable="{gp>/editable}"
-												class="gpmsFieldInput"
-												width="100%"/>
+												id="customerInput" value="{gp>/CustomerNo}" placeholder="Select customer..." editable="{gp>/editable}" showValueHelp="true" valueHelpRequest=".onCustomerInvoiceValueHelp" submit=".onCustomerInputSubmit" change=".onCustomerInputChange" class="gpmsFieldInput" width="100%"/>
+										</VBox>
+										<!-- Customer Name -->
+										<VBox>
+											<Label text="Customer Name" class="gpmsFieldLabel"/>
+											<Input value="{gp>/CustomerName}" editable="false" class="gpmsFieldInput" width="100%"/>
 										</VBox>
 									</layout:Grid>
 								</VBox>
@@ -399,20 +410,21 @@
 								<cells>
 									<Text text="{gp>sno}" class="gpmsSnoText"/>
 
-									<!-- Material SAP Code (System mode) -->
+									<!-- Material SAP Code -->
 									<Input
 										value="{gp>material}"
 										showValueHelp="true"
 										valueHelpRequest=".onMaterialValueHelp"
+										change=".onMaterialInputChange"
 										editable="{gp>/editable}"
 										class="gpmsTableInput"
 										width="100%"
 										placeholder="F4..."/>
 
-									<!-- Material Description (editable only in Manual mode) -->
+									<!-- Material Description -->
 									<Input
 										value="{gp>materialName}"
-										editable="{= ${gp>/IsManual} &amp;&amp; ${gp>/editable} }"
+										editable="{gp>/editable}"
 										class="gpmsTableInput"
 										width="100%"
 										placeholder="Enter description..."/>
@@ -425,10 +437,10 @@
 										liveChange=".onQtyRateChange"
 										class="gpmsTableInput"/>
 
-									<!-- UOM (editable only in Manual mode) -->
+									<!-- UOM -->
 									<Input
 										value="{gp>uom}"
-										editable="{= ${gp>/IsManual} &amp;&amp; ${gp>/editable} }"
+										editable="{gp>/editable}"
 										class="gpmsTableInput"
 										textAlign="Center"
 										placeholder="UOM..."/>

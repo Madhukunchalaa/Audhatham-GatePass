@@ -26,94 +26,47 @@ sap.ui.define([
 			}
 
 			var that = this;
-			var aAllResults = [];
-			var iDone = 0;
-			var iTarget = 3;
-
-			function onBothDone() {
-				iDone++;
-				if (iDone === iTarget) {
-					sap.ui.core.BusyIndicator.hide();
-					aAllResults.forEach(function (oItem) {
-						oItem.PendingAt = that._computePendingAt(oItem);
-					});
-					that.getView().getModel("gatePassList").setProperty("/items", aAllResults);
-					that._updateCount();
-				}
-			}
-
 			sap.ui.core.BusyIndicator.show(0);
 
-			// 1. Fetch NRGP requests
-			oODataModel.read("/GateReqHdrSet", {
-				filters: [new Filter("GatePassType", FilterOperator.EQ, "NRGP"), new Filter("Status", FilterOperator.EQ, "All")],
+			oODataModel.read("/ZRgpNrgpSet", {
+				urlParameters: { "$expand": "ZRGPNRGPItmNav" },
 				success: function (oData) {
-					var aMapped = (oData.results || []).map(function (oItem) {
-						var sRaw = oItem.ApprovalReq || oItem.Status || "";
-						var sStatus = oItem.Status || "Pending";
-						if (sRaw === "A" || sRaw === "APPROVED" || sRaw === "Approved") sStatus = "Approved";
-						else if (sRaw === "R" || sRaw === "REJECTED" || sRaw === "Rejected") sStatus = "Rejected";
-						else if (sRaw === "AM" || sRaw === "AMENDMENT" || sRaw === "Amendment") sStatus = "Amendment";
+					sap.ui.core.BusyIndicator.hide();
+					var aResults = (oData.results || []).map(function (oItem) {
+						var sType = oItem.Type || "";
+						if (sType === "NRGP") sType = "NRGP";
+						else if (sType === "RGP") sType = "RGP";
 
-						oItem.Status = sStatus;
-						return oItem;
-					});
-					aAllResults = aAllResults.concat(aMapped);
-					onBothDone();
-				},
-				error: function () { onBothDone(); }
-			});
-
-			// 2. Fetch RGP requests
-			oODataModel.read("/GateReqHdrSet", {
-				filters: [new Filter("GatePassType", FilterOperator.EQ, "RGP"), new Filter("Status", FilterOperator.EQ, "All")],
-				success: function (oData) {
-					var aMapped = (oData.results || []).map(function (oItem) {
-						var sRaw = oItem.ApprovalReq || oItem.Status || "";
-						var sStatus = oItem.Status || "Pending";
-						if (sRaw === "A" || sRaw === "APPROVED" || sRaw === "Approved") sStatus = "Approved";
-						else if (sRaw === "R" || sRaw === "REJECTED" || sRaw === "Rejected") sStatus = "Rejected";
-						else if (sRaw === "AM" || sRaw === "AMENDMENT" || sRaw === "Amendment") sStatus = "Amendment";
-
-						oItem.Status = sStatus;
-						return oItem;
-					});
-					aAllResults = aAllResults.concat(aMapped);
-					onBothDone();
-				},
-				error: function () { onBothDone(); }
-			});
-
-			// 3. Fetch PO Gate Passes from GateInPoHdrSet (filtered by logged-in user's plant)
-			var oUserModel = sap.ui.getCore().getModel("user");
-			var sPlant = oUserModel ? oUserModel.getProperty("/Plant") : "";
-			var aPoFilters = [];
-			if (sPlant) {
-				aPoFilters.push(new Filter("Plant", FilterOperator.EQ, sPlant));
-			}
-
-			// 3. Fetch PO Gate Passes from GateReqHdrSet (filtered by GatePassType eq 'PO')
-			oODataModel.read("/GateReqHdrSet", {
-				filters: [new Filter("GatePassType", FilterOperator.EQ, "PO"), new Filter("Status", FilterOperator.EQ, "All")],
-				success: function (oData) {
-					var aPoResults = (oData.results || []).map(function (oItem) {
 						return {
-							GatePassReqNo: "", // No request number for PO gate passes
 							GatePassNo: oItem.GatePassNo || "",
-							PurchaseOrder: oItem.GatePassReqNo || oItem.GatePassreqNo || "", // Store PO for dialog details
-							GatePassType: "GP with PO",
-							Status: oItem.Status || "Pending",
+							GatePassReqNo: oItem.GatePassNo || "",
+							GatePassType: sType,
+							Direction: oItem.Direction || "",
+							Status: oItem.Status || "",
 							Plant: oItem.Plant || "",
+							Vendor: oItem.Vendor || "",
 							VendorName: oItem.VendorName || "",
 							Department: oItem.Department || "",
 							VehicleNo: oItem.VehicleNo || "",
+							ModeOfDispatch: oItem.ModeOfDispatch || "",
+							DriverName: oItem.DriverName || "",
+							GpDate: oItem.GpDate instanceof Date ? oItem.GpDate.toLocaleDateString('en-GB', {day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\//g,'-') : (oItem.GpDate || ""),
+							PurchaseOrder: oItem.PurchaseOrder || "",
+							CustomerInvoice: oItem.CustomerInvoice || "",
+							Remarks: oItem.Remarks || "",
+							DocumentRef: oItem.DocumentRef || "",
 							PendingAt: ""
 						};
 					});
-					aAllResults = aAllResults.concat(aPoResults);
-					onBothDone();
+					that.getView().getModel("gatePassList").setProperty("/items", aResults);
+					that._updateCount();
 				},
-				error: function () { onBothDone(); }
+				error: function (oErr) {
+					sap.ui.core.BusyIndicator.hide();
+					var sMsg = "Failed to load gate pass list.";
+					try { sMsg = JSON.parse(oErr.responseText).error.message.value; } catch (e) {}
+					sap.m.MessageBox.error(sMsg);
+				}
 			});
 		},
 
@@ -127,8 +80,8 @@ sap.ui.define([
 
 		onResetButtonPress: function () {
 			this.byId("idGatePassSearchField").setValue("");
-			this.byId("idStatusFilterSelect").setSelectedKey("");
 			this.byId("idTypeFilterSelect").setSelectedKey("");
+			this.byId("idDirectionFilterSelect").setSelectedKey("");
 			this._applyFilters();
 		},
 
@@ -138,17 +91,17 @@ sap.ui.define([
 
 			var sSearch = this.byId("idGatePassSearchField").getValue().trim();
 			if (sSearch) {
-				aFilters.push(new Filter("GatePassReqNo", FilterOperator.Contains, sSearch));
-			}
-
-			var sStatus = this.byId("idStatusFilterSelect").getSelectedKey();
-			if (sStatus) {
-				aFilters.push(new Filter("Status", FilterOperator.EQ, sStatus));
+				aFilters.push(new Filter("GatePassNo", FilterOperator.Contains, sSearch));
 			}
 
 			var sType = this.byId("idTypeFilterSelect").getSelectedKey();
 			if (sType) {
 				aFilters.push(new Filter("GatePassType", FilterOperator.EQ, sType));
+			}
+
+			var sDirection = this.byId("idDirectionFilterSelect").getSelectedKey();
+			if (sDirection) {
+				aFilters.push(new Filter("Direction", FilterOperator.EQ, sDirection));
 			}
 
 			oBinding.filter(aFilters);
@@ -164,7 +117,7 @@ sap.ui.define([
 
 		onColumnListItemPress: function (oEvent) {
 			var oItem = oEvent.getSource().getBindingContext("gatePassList").getObject();
-			var sId = oItem.GatePassReqNo || oItem.GatePassNo;
+			var sId = oItem.GatePassNo || "";
 			this.getRouter().navTo("GatePassDetail", { reqNo: sId });
 		},
 
