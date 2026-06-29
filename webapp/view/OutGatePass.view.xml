@@ -1,4 +1,4 @@
-﻿<mvc:View
+<mvc:View
 	controllerName="zaudgpms.audhatham.com.controller.OutGatePass"
 	xmlns:mvc="sap.ui.core.mvc"
 	xmlns="sap.m"
@@ -173,7 +173,7 @@
 					</headerToolbar>
 					<Table items="{out>/items}" class="gpmsItemTable">
 						<columns>
-							<Column width="3rem" hAlign="Center"><Text text="#" class="gpmsHeaderText"/></Column>
+							<Column width="3rem" hAlign="Center"><Text text="SNo" class="gpmsHeaderText"/></Column>
 							<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Material Description" class="gpmsHeaderText"/></Column>
 							<Column width="8rem"><Text text="HSN Code" class="gpmsHeaderText"/></Column>
 							<Column width="6rem" hAlign="Right"><Text text="Quantity" class="gpmsHeaderText"/></Column>

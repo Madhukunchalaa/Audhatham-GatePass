@@ -1,4 +1,4 @@
-﻿<mvc:View
+<mvc:View
 	controllerName="zaudgpms.audhatham.com.controller.NRGPDetail"
 	xmlns:mvc="sap.ui.core.mvc"
 	xmlns="sap.m"
@@ -87,7 +87,7 @@
 					<Table items="{nrgp>/items}" class="gpmsItemTable" alternateRowColors="true">
 						<columns>
 							<Column width="3rem" hAlign="Center">
-								<Text text="#" class="gpmsHeaderText" wrapping="false"/>
+								<Text text="SNo" class="gpmsHeaderText" wrapping="false"/>
 							</Column>
 							<Column width="13rem">
 								<Text text="Material Description" class="gpmsHeaderText" wrapping="false"/>

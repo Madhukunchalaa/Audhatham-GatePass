@@ -357,7 +357,7 @@
 						class="gpmsItemTable">
 						<columns>
 							<Column width="3rem" hAlign="Center">
-								<Text text="#" class="gpmsHeaderText"/>
+								<Text text="SNo" class="gpmsHeaderText"/>
 							</Column>
 
 							<!-- Material SAP Code: hidden in Manual mode -->
