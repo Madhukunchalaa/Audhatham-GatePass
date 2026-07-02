@@ -1354,6 +1354,15 @@ sap.ui.define([
 
 		onPrint: async function () {
 			var oGp = this.getView().getModel("gp").getData();
+			var sPlant = oGp.Plant || "";
+			if (sPlant === "1001" || sPlant === "1000" || sPlant === "1501") {
+				await this._printGlochemFormat(oGp);
+			} else {
+				await this._printAudhataamFormat(oGp);
+			}
+		},
+
+		_printAudhataamFormat: async function (oGp) {
 			const { jsPDF } = window.jspdf;
 			
 			// Landscape A4
@@ -1373,11 +1382,6 @@ sap.ui.define([
 
 			var sDate = fnDisplayDate(oGp.gpDate) || new Date().toLocaleDateString('en-GB').split('/').join('-');
 			
-			// Compute total
-			var fTotal = (oGp.items || []).reduce(function (sum, it) {
-				return sum + (parseFloat(it.amount) || 0);
-			}, 0);
-
 			var sDir = oGp.IsInward ? "INWARD" : "OUTWARD";
 			var sType = oGp.IsReturnable ? "RGP" : "NRGP";
 			var sTypeLabel = sDir + " " + (oGp.IsReturnable ? "RETURNABLE" : "NON-RETURNABLE") + " GATE PASS";
@@ -1394,59 +1398,34 @@ sap.ui.define([
 				var sLogoBase64 = await this._getImageBase64(sLogoUrl);
 				doc.addImage(sLogoBase64, 'PNG', margin, 9, 32, 12);
 			} catch (e) {
-				doc.setFont("helvetica", "bold");
-				doc.setFontSize(18);
-				doc.setTextColor(35, 93, 159);
-				doc.text("Audhataam", margin, 18);
-				doc.setTextColor(0, 0, 0);
+				console.warn("Logo load failed:", e);
 			}
 
-			doc.setTextColor(0, 0, 0);
+			// Main Header texts
 			doc.setFont("helvetica", "bold");
 			doc.setFontSize(14);
-			doc.text("Audhataam Pharmaceuticals Private Limited", pageWidth / 2, 13, { align: "center" });
-			doc.setFont("helvetica", "normal");
+			doc.text("Audhataam Pharmaceuticals Private Limited", 56, 12);
+
 			doc.setFontSize(7.5);
-			doc.text("A Progressive Pharmaceutical & API Company", pageWidth / 2, 17, { align: "center" });
-			doc.text("3rd Floor, NCC Building, Durgam Cheruvu Road, Hi-Tech City, Madhapur, Hyderabad, Telangana, 500081, India.", pageWidth / 2, 20.5, { align: "center" });
-			doc.text("Tel : +91-40-67151000  |  Email : info@audhataam.com", pageWidth / 2, 24, { align: "center" });
-			doc.setFont("helvetica", "bold");
-			doc.text("GSTIN : 36AABCA8375L1Z1  |  CIN : U24239TG2020PTC144888", pageWidth / 2, 27.5, { align: "center" });
-
-			// GP No + Date in top-right corner
-			doc.setFontSize(8.5);
-			doc.setFont("helvetica", "bold");
-			doc.text("GP No : " + (oGp.GatePassNo || oGp.GatePassReqNo || "Draft"), pageWidth - margin, 12, { align: "right" });
 			doc.setFont("helvetica", "normal");
-			doc.text("Date : " + sDate, pageWidth - margin, 17, { align: "right" });
+			doc.text("Survey No. 104, 105, 106, 108 & 112, G.I.D.C., Piparia, Silvassa - 396230", 56, 15.5);
 
-			// Thick separator below header
-			doc.setLineWidth(0.5);
-			doc.line(margin, 30.5, pageWidth - margin, 30.5);
-
-			// ── DOCUMENT TITLE ───────────────────────────────────────────────────
 			doc.setFont("helvetica", "bold");
-			doc.setFontSize(11);
-			doc.text(sTypeLabel, pageWidth / 2, 37, { align: "center" });
-			var titleW = doc.getTextWidth(sTypeLabel);
-			doc.setLineWidth(0.35);
-			doc.line(pageWidth / 2 - titleW / 2, 38.5, pageWidth / 2 + titleW / 2, 38.5);
+			doc.setFontSize(10.5);
+			doc.text(sTypeLabel, contentWidth / 2 + margin, 24.5, { align: "center" });
 
-			// ── INFO GRID ────────────────────────────────────────────────────────
-			var gridY = 41, gridH = 32;
-			var lColW = 148, rColW = contentWidth - lColW;
-			var lColX = margin, rColX = margin + lColW;
-			var pad = 3, rLH = 5.5;
+			// ── SENDER & RECEIVER INFO BOXES ─────────────────────────────────────
+			var gridY = 27.5, gridH = 26;
+			var lColX = margin, lColW = 168;
+			var rColX = margin + lColW, rColW = contentWidth - lColW;
+			var rLH = 4.5;
+			var pad = 4;
 
 			doc.setLineWidth(0.3);
-			doc.rect(lColX, gridY, contentWidth, gridH);
-			doc.line(rColX, gridY, rColX, gridY + gridH);
-			
-			// Horizontal divider inside left col
-			doc.setLineWidth(0.2);
-			doc.line(lColX, gridY + 9, rColX, gridY + 9);
+			doc.rect(lColX, gridY, lColW, gridH);
+			doc.rect(rColX, gridY, rColW, gridH);
 
-			// Left col top row — Please Allow
+			// Left col header
 			doc.setFontSize(8.5);
 			doc.setFont("helvetica", "normal");
 			doc.text(oGp.IsInward ? "Please receive from:" : "Please allow:", lColX + pad, gridY + 6);
@@ -1456,28 +1435,22 @@ sap.ui.define([
 			// Left col body — Vendor details
 			doc.setFontSize(8.5);
 			doc.setFont("helvetica", "bold");
-			doc.text(oGp.vendorName || "", lColX + pad, gridY + 14);
+			doc.text(oGp.vendorName || "", lColX + pad, gridY + 12);
 			doc.setFont("helvetica", "normal");
 			var splitAddr = doc.splitTextToSize(oGp.vendorAddress || oGp.vendor || "", lColW - pad * 2 - 2);
-			doc.text(splitAddr, lColX + pad, gridY + 19.5);
-			doc.setFont("helvetica", "italic");
-			doc.setFontSize(8);
-			
-			var sPremisesAction = oGp.IsInward ? "to bring in the following material to Audhataam premises." : "to take out the following material from Audhataam premises.";
-			doc.text(sPremisesAction, lColX + pad, gridY + gridH - 3.5);
+			doc.text(splitAddr, lColX + pad, gridY + 17);
 
 			// Right col — Document details
 			var rc = rColX + pad, ry = gridY + 6;
-			var lblOff = 30;
 			doc.setFontSize(8.5);
-			doc.setFont("helvetica", "bold"); doc.text("GP Type:", rc, ry);
-			doc.setFont("helvetica", "normal"); doc.text(sType, rc + lblOff, ry);
+			doc.setFont("helvetica", "bold"); doc.text("GP No:", rc, ry);
+			doc.setFont("helvetica", "normal"); doc.text(oGp.GatePassNo || "Draft", rc + 20, ry);
 			ry += rLH;
-			doc.setFont("helvetica", "bold"); doc.text("Department:", rc, ry);
-			doc.setFont("helvetica", "normal"); doc.text("STORES", rc + lblOff, ry);
+			doc.setFont("helvetica", "bold"); doc.text("Date:", rc, ry);
+			doc.setFont("helvetica", "normal"); doc.text(sDate, rc + 20, ry);
 			ry += rLH;
-			doc.setFont("helvetica", "bold"); doc.text("Vehicle No:", rc, ry);
-			doc.setFont("helvetica", "normal"); doc.text(oGp.VehicleNo || "", rc + lblOff, ry);
+			doc.setFont("helvetica", "bold"); doc.text("Vehicle:", rc, ry);
+			doc.setFont("helvetica", "normal"); doc.text(oGp.VehicleNo || "", rc + 20, ry);
 
 			// ── ITEMS TABLE ──────────────────────────────────────────────────────
 			var tableData = (oGp.items || []).map(function (it, i) {
@@ -1533,7 +1506,6 @@ sap.ui.define([
 			var remY = finalY + 1, remH = 8;
 			doc.setLineWidth(0.25);
 			doc.rect(margin, remY, contentWidth, remH);
-			doc.line(margin + 28, remY, margin + 28, remY + remH);
 			doc.setFont("helvetica", "bold"); doc.setFontSize(8);
 			doc.text("Remarks:", margin + 3, remY + 5);
 			doc.setFont("helvetica", "normal");
@@ -1572,6 +1544,225 @@ sap.ui.define([
 			// ── FORMAT NUMBER ─────────────────────────────────────────────────────
 			doc.setFont("helvetica", "normal"); doc.setFontSize(6.5);
 			doc.text("Format No.: HR-013-F001-01-12/05/2025", margin, sigStartY + sigRowH + 5);
+
+			doc.save("GatePass_" + (oGp.GatePassNo || oGp.GatePassReqNo || "Draft") + ".pdf");
+			MessageToast.show("Gate Pass PDF generated.");
+		},
+
+		_printGlochemFormat: async function (oGp) {
+			const { jsPDF } = window.jspdf;
+			
+			// Portrait A4
+			var doc = new jsPDF('p', 'mm', 'a4');
+			var pageWidth = doc.internal.pageSize.width;    // 210mm
+			var pageHeight = doc.internal.pageSize.height;  // 297mm
+			var margin = 12;
+			var contentWidth = pageWidth - margin * 2;       // 186mm
+
+			// Date formatting
+			var fnDisplayDate = function (vDate) {
+				if (!vDate) return "";
+				var d = (vDate instanceof Date) ? vDate : new Date(vDate);
+				if (isNaN(d.getTime())) return String(vDate);
+				return d.toLocaleDateString("en-GB").split("/").join("-");
+			};
+			var sDate = fnDisplayDate(oGp.gpDate) || new Date().toLocaleDateString('en-GB').split('/').join('-');
+			
+			var sType = oGp.IsReturnable ? "Returnable" : "Non Returnable";
+			
+			// ── PAGE BORDER ──────────────────────────────────────────────────────
+			doc.setLineWidth(0.4);
+			doc.rect(7, 7, pageWidth - 14, pageHeight - 14);
+
+			// ── TOP HEADER BOX ───────────────────────────────────────────────────
+			var boxY = 12;
+			var boxH = 28;
+			var rLH = 4.5;
+			doc.setLineWidth(0.3);
+			doc.rect(margin, boxY, contentWidth, boxH);
+			
+			// Draw horizontal lines inside header box
+			doc.line(margin, boxY + 10, margin + contentWidth, boxY + 10);
+			doc.line(margin, boxY + 19, margin + contentWidth, boxY + 19);
+
+			// Draw vertical dividers inside header box
+			doc.line(margin + 40, boxY, margin + 40, boxY + 10); // Column divider for logo/text
+			doc.line(margin + 130, boxY + 10, margin + 130, boxY + 19); // Column divider for page number
+			doc.line(margin + 62, boxY + 19, margin + 62, boxY + 28); // Column dividers for doc info
+			doc.line(margin + 115, boxY + 19, margin + 115, boxY + 28);
+
+			// Draw Glochem logo graphics dynamically
+			doc.setLineWidth(0.4);
+			doc.ellipse(margin + 20, boxY + 5, 4.5, 3.5);
+			doc.setFont("helvetica", "bold"); doc.setFontSize(7.5);
+			doc.text("GLOCHEM", margin + 20, boxY + 9, { align: "center" });
+
+			// Text header details
+			doc.setFontSize(12.5);
+			doc.setFont("helvetica", "bold");
+			doc.text("Glochem Industries Pvt. Ltd.", margin + 45, boxY + 6.5);
+
+			// Second row
+			doc.setFontSize(9.5);
+			doc.text("GATE PASS CUM DELIVERY CHALLAN", margin + 3, boxY + 16);
+			doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
+			doc.text("Page 1 of 1", margin + 133, boxY + 15.5);
+
+			// Third row
+			doc.text("Doc. No. FMT-17-WH-SOP-001", margin + 3, boxY + 24.5);
+			doc.text("Ver. No.  01", margin + 65, boxY + 24.5);
+			doc.text("Doc. Date  22 AUG 2024", margin + 118, boxY + 24.5);
+
+			// ── SENDER & CONSIGNEE BOXES ─────────────────────────────────────────
+			var detailY = boxY + boxH + 2; // Y = 42
+			var detailH = 45;
+			var colW = contentWidth / 2; // 93mm
+			
+			// Draw outer boxes
+			doc.rect(margin, detailY, colW, detailH);
+			doc.rect(margin + colW, detailY, colW, detailH);
+
+			// Draw horizontal line inside left box for Consignee Address
+			doc.line(margin, detailY + 21, margin + colW, detailY + 21);
+
+			// Left column - Glochem sender details
+			doc.setFont("helvetica", "bold"); doc.setFontSize(8.5);
+			doc.text("Glochem Industries Private Limited", margin + 3, detailY + 4.5);
+			doc.setFont("helvetica", "normal"); doc.setFontSize(7.5);
+			doc.text("Survey No. 174 to 176, I.D.A. Bollaram,", margin + 3, detailY + 8.5);
+			doc.text("Sangareddy District. Telangana State - 502325", margin + 3, detailY + 12.5);
+			doc.text("GSTN : 36AAICG6875A1ZI", margin + 3, detailY + 16.5);
+
+			// Left column - Consignee Address details
+			doc.setFont("helvetica", "bold"); doc.setFontSize(8.5);
+			doc.text("Consignee Address:", margin + 3, detailY + 25);
+			doc.setFont("helvetica", "normal"); doc.setFontSize(8);
+			
+			var sConsigneeName = "";
+			var sConsigneeAddr = "";
+			if (oGp.HasCustomerInvoice) {
+				sConsigneeName = oGp.CustomerName || "";
+				sConsigneeAddr = oGp.CustomerNo || "";
+			} else {
+				sConsigneeName = oGp.vendorName || "";
+				sConsigneeAddr = oGp.vendorAddress || oGp.vendor || "";
+			}
+			
+			doc.setFont("helvetica", "bold");
+			doc.text(sConsigneeName, margin + 3, detailY + 29.5);
+			doc.setFont("helvetica", "normal");
+			var splitConsignee = doc.splitTextToSize(sConsigneeAddr, colW - 6);
+			doc.text(splitConsignee, margin + 3, detailY + 34.5);
+
+			// Right column - Gate Pass Meta details
+			doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+			doc.text(sType, margin + colW + colW / 2, detailY + 5.5, { align: "center" });
+			doc.line(margin + colW, detailY + 8, margin + contentWidth, detailY + 8); // line under Returnable header
+
+			// Meta values below
+			var ry = detailY + 13;
+			var rLH_meta = 5.5;
+			var lblX = margin + colW + 3;
+			var valX = margin + colW + 28;
+			
+			doc.setFont("helvetica", "bold"); doc.setFontSize(8);
+			doc.text("Gate Pass No. :", lblX, ry);
+			doc.setFont("helvetica", "normal"); doc.text(oGp.GatePassNo || "Draft", valX, ry);
+			
+			ry += rLH_meta;
+			doc.setFont("helvetica", "bold"); doc.text("Date:", lblX, ry);
+			doc.setFont("helvetica", "normal"); doc.text(sDate, valX, ry);
+			
+			ry += rLH_meta;
+			doc.setFont("helvetica", "bold"); doc.text("GST No. :", lblX, ry);
+			doc.setFont("helvetica", "normal"); doc.text(oGp.vendorGST || "N/A", valX, ry);
+			
+			ry += rLH_meta;
+			doc.setFont("helvetica", "bold"); doc.text("Truck No. :", lblX, ry);
+			doc.setFont("helvetica", "normal"); doc.text(oGp.VehicleNo || "N/A", valX, ry);
+			
+			ry += rLH_meta;
+			doc.setFont("helvetica", "bold"); doc.text("Transport :", lblX, ry);
+			doc.setFont("helvetica", "normal"); doc.text(oGp.ModeOfDispatch || "Road", valX, ry);
+
+			// ── ITEMS TABLE ──────────────────────────────────────────────────────
+			var tableData = (oGp.items || []).map(function (it, i) {
+				return [
+					i + 1,
+					(it.materialName || "") + (it.material ? " (" + it.material + ")" : ""),
+					it.uom || "",
+					it.noOfPacks || "",
+					parseFloat(it.quantity || 0).toLocaleString('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 })
+				];
+			});
+			while (tableData.length < 6) { tableData.push(["", "", "", "", ""]); }
+
+			doc.autoTable({
+				startY: detailY + detailH + 2,
+				head: [['S.No.', 'Description', 'UOM', 'Pack', 'Qty.']],
+				body: tableData,
+				theme: 'grid',
+				headStyles: {
+					fillColor: [235, 235, 235],
+					textColor: [0, 0, 0],
+					fontStyle: 'bold',
+					fontSize: 8.5,
+					halign: 'center',
+					valign: 'middle',
+					cellPadding: 3,
+					lineWidth: 0.3,
+					lineColor: [0, 0, 0]
+				},
+				bodyStyles: {
+					fontSize: 8.5,
+					cellPadding: { top: 3.5, bottom: 3.5, left: 3, right: 3 },
+					lineColor: [0, 0, 0],
+					lineWidth: 0.25,
+					valign: 'middle'
+				},
+				alternateRowStyles: { fillColor: [255, 255, 255] },
+				columnStyles: {
+					0: { cellWidth: 12, halign: 'center' },
+					1: { cellWidth: 'auto', halign: 'left' },
+					2: { cellWidth: 18, halign: 'center' },
+					3: { cellWidth: 25, halign: 'center' },
+					4: { cellWidth: 25, halign: 'right' }
+				},
+				margin: { left: margin, right: margin }
+			});
+
+			var finalY = doc.lastAutoTable.finalY;
+
+			// ── REMARKS BOX ──────────────────────────────────────────────────────
+			var remY = finalY + 1.5;
+			var remH = 10;
+			doc.rect(margin, remY, contentWidth, remH);
+			doc.setFont("helvetica", "bold"); doc.setFontSize(8.5);
+			doc.text("Remarks & Ref. Doc No. / Dt. :", margin + 3, remY + 6);
+			doc.setFont("helvetica", "normal");
+			var splitRemarks = doc.splitTextToSize(oGp.Remarks || "NIL", contentWidth - 52);
+			doc.text(splitRemarks, margin + 49, remY + 6);
+
+			// ── SIGNATURE TABLE ──────────────────────────────────────────────────
+			var sigY = remY + remH + 2;
+			var sigH = 16;
+			var sigColW = contentWidth / 4; // 46.5mm
+			doc.rect(margin, sigY, contentWidth, sigH);
+			
+			// Draw vertical separators
+			doc.line(margin + sigColW, sigY, margin + sigColW, sigY + sigH);
+			doc.line(margin + sigColW * 2, sigY, margin + sigColW * 2, sigY + sigH);
+			doc.line(margin + sigColW * 3, sigY, margin + sigColW * 3, sigY + sigH);
+
+			doc.setFont("helvetica", "bold"); doc.setFontSize(8);
+			doc.text("Prepared By", margin + sigColW / 2, sigY + 5, { align: "center" });
+			doc.text("Warehouse In-charge", margin + sigColW * 1 + sigColW / 2, sigY + 5, { align: "center" });
+			doc.text("Authorized By", margin + sigColW * 2 + sigColW / 2, sigY + 5, { align: "center" });
+			doc.text("Receiver Sign with Stamp", margin + sigColW * 3 + sigColW / 2, sigY + 5, { align: "center" });
+
+			// ── FOOTER ───────────────────────────────────────────────────────────
+			doc.setFont("helvetica", "normal"); doc.setFontSize(6.5);
+			doc.text("Format No.: HR-013-F001-01-12/05/2025", margin, sigY + sigH + 5);
 
 			doc.save("GatePass_" + (oGp.GatePassNo || oGp.GatePassReqNo || "Draft") + ".pdf");
 			MessageToast.show("Gate Pass PDF generated.");

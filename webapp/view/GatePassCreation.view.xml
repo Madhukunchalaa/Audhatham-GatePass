@@ -507,7 +507,7 @@
 					icon="sap-icon://print"
 					press=".onPrint"
 					type="Emphasized"
-					visible="{= !${gp>/editable} &amp;&amp; !!${gp>/GatePassNo} &amp;&amp; (${gp>/Plant} === '2001' || ${gp>/Plant} === '2501' || ${gp>/Plant} === '2000') }"
+					visible="{= !${gp>/editable} &amp;&amp; !!${gp>/GatePassNo} &amp;&amp; (${gp>/Plant} === '2001' || ${gp>/Plant} === '2501' || ${gp>/Plant} === '2000' || ${gp>/Plant} === '1001' || ${gp>/Plant} === '1000' || ${gp>/Plant} === '1501') }"
 					class="gpmsSubmitBtn sapUiSmallMarginEnd"/>
 				<Button
 					text="Submit Gate Pass"
