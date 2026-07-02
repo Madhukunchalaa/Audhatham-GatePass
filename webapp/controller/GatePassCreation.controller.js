@@ -75,6 +75,7 @@ sap.ui.define([
 				},
 				success: function (oData) {
 					sap.ui.core.BusyIndicator.hide();
+					console.log("[Detail Route Matched] raw oData results:", JSON.stringify(oData && oData.results || []));
 					var oResult = oData && oData.results && oData.results[0];
 					if (oResult) {
 						that._populateModelWithData(oResult);
@@ -115,15 +116,17 @@ sap.ui.define([
 			oGpModel.setProperty("/vendorGST", oData.VendorGST || "");
 
 			// Ensure loaded vendor is in the vendors list so the ComboBox selectedKey resolves visually
+			var oVendorModel = this.getView().getModel("vendors");
+			if (!oVendorModel) {
+				oVendorModel = new JSONModel({ results: [] });
+				this.getView().setModel(oVendorModel, "vendors");
+			}
 			if (oData.Vendor) {
-				var oVendorModel = this.getView().getModel("vendors");
-				if (oVendorModel) {
-					var aVendors = oVendorModel.getProperty("/results") || [];
-					var bExists = aVendors.some(function (v) { return v.Vendor === oData.Vendor; });
-					if (!bExists) {
-						aVendors = aVendors.concat([{ Vendor: oData.Vendor, VendorName: oData.VendorName || "" }]);
-						oVendorModel.setProperty("/results", aVendors);
-					}
+				var aVendors = oVendorModel.getProperty("/results") || [];
+				var bExists = aVendors.some(function (v) { return v.Vendor === oData.Vendor; });
+				if (!bExists) {
+					aVendors = aVendors.concat([{ Vendor: oData.Vendor, VendorName: oData.VendorName || "" }]);
+					oVendorModel.setProperty("/results", aVendors);
 				}
 			}
 			oGpModel.setProperty("/PurchaseOrder", oData.PurchaseOrder || "");
@@ -198,7 +201,7 @@ sap.ui.define([
 			});
 			oGpModel.setProperty("/items", aItems);
 
-			if (oData.Plant) {
+			if (oData.Plant && oGpModel.getProperty("/editable")) {
 				this._loadVendors(oData.Plant);
 				this._loadMaterials(oData.Plant);
 			}
@@ -372,6 +375,7 @@ sap.ui.define([
 				},
 				success: function (oData) {
 					sap.ui.core.BusyIndicator.hide();
+					console.log("[GatePassNo Change] raw oData results:", JSON.stringify(oData && oData.results || []));
 					var oResult = oData && oData.results && oData.results[0];
 					if (oResult) {
 						var bEditable = that.getView().getModel("gp").getProperty("/editable");

@@ -19,6 +19,16 @@ sap.ui.define([
 
 			this.getRouter().initialize();
 			this._authenticateUser();
+
+			// Diagnostics: test fetching a gate pass record to verify property names returned by backend
+			fetch("/sap/opu/odata/sap/ZMM_GATEPASS_SRV/ZRgpNrgpSet?$top=5&$format=json")
+				.then(function (r) { return r.json(); })
+				.then(function (data) {
+					console.log("[Diagnostic] ZRgpNrgpSet top 5 records:", data && data.d && data.d.results);
+				})
+				.catch(function (err) {
+					console.warn("[Diagnostic] Failed to fetch ZRgpNrgpSet:", err);
+				});
 		},
 
 		getContentDensityClass: function () {
