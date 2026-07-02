@@ -187,7 +187,7 @@ sap.ui.define([
 					material: it.Material || "",
 					materialName: it.MaterialDesc || it.ItemDescription || "",
 					quantity: String(sQtyVal || ""),
-					noOfPacks: "",
+					noOfPacks: it.NoOfPackages ? String(it.NoOfPackages) : "",
 					uom: it.UOM || "",
 					expectedReturnableDate: dExpected,
 					receivedQty: parseFloat(it.ReceivedQuantity || it.RecievedQuantity || 0),
@@ -1293,6 +1293,7 @@ sap.ui.define([
 								UOM:              it.uom || "EA",
 								RecievedQuantity: sRecQty,
 								Quantity:         sQty,
+								NoOfPackages:     it.noOfPacks ? String(it.noOfPacks) : "",
 								ReturnableDate:   fnFormatDate(it.expectedReturnableDate)
 							};
 						})
