@@ -1521,7 +1521,7 @@ sap.ui.define([
 					1: { cellWidth: 'auto', halign: 'left' },
 					2: { cellWidth: 30, halign: 'center' },
 					3: { cellWidth: 30, halign: 'right' },
-					4: { cellWidth: 24, halign: 'center' },
+					4: { cellWidth: 50, halign: 'center' },
 					5: { cellWidth: 22, halign: 'center' }
 				},
 				margin: { left: margin, right: margin }
