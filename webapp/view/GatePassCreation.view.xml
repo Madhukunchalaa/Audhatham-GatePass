@@ -507,6 +507,7 @@
 					icon="sap-icon://print"
 					press=".onPrint"
 					type="Emphasized"
+					visible="{= !${gp>/editable} &amp;&amp; !!${gp>/GatePassNo} }"
 					class="gpmsSubmitBtn sapUiSmallMarginEnd"/>
 				<Button
 					text="Submit Gate Pass"
