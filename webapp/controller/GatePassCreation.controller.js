@@ -1470,9 +1470,6 @@ sap.ui.define([
 			var rc = rColX + pad, ry = gridY + 6;
 			var lblOff = 30;
 			doc.setFontSize(8.5);
-			doc.setFont("helvetica", "bold"); doc.text("Req. No:", rc, ry);
-			doc.setFont("helvetica", "normal"); doc.text(oGp.GatePassReqNo || "Draft", rc + lblOff, ry);
-			ry += rLH;
 			doc.setFont("helvetica", "bold"); doc.text("GP Type:", rc, ry);
 			doc.setFont("helvetica", "normal"); doc.text(sType, rc + lblOff, ry);
 			ry += rLH;
@@ -1489,14 +1486,15 @@ sap.ui.define([
 					it.materialName || "",
 					it.material || "",
 					parseFloat(it.quantity || 0).toLocaleString('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }),
+					it.noOfPacks || "",
 					it.uom || ""
 				];
 			});
-			while (tableData.length < 6) { tableData.push(["", "", "", "", ""]); }
+			while (tableData.length < 6) { tableData.push(["", "", "", "", "", ""]); }
 
 			doc.autoTable({
 				startY: gridY + gridH + 1,
-				head: [['S.No', 'DESCRIPTION OF GOODS', 'Material Code', 'Quantity', 'UOM']],
+				head: [['S.No', 'DESCRIPTION OF GOODS', 'Material Code', 'Quantity', 'No. of Packs', 'UOM']],
 				body: tableData,
 				theme: 'grid',
 				headStyles: {
@@ -1523,7 +1521,8 @@ sap.ui.define([
 					1: { cellWidth: 'auto', halign: 'left' },
 					2: { cellWidth: 30, halign: 'center' },
 					3: { cellWidth: 30, halign: 'right' },
-					4: { cellWidth: 22, halign: 'center' }
+					4: { cellWidth: 24, halign: 'center' },
+					5: { cellWidth: 22, halign: 'center' }
 				},
 				margin: { left: margin, right: margin }
 			});
@@ -1540,35 +1539,8 @@ sap.ui.define([
 			doc.setFont("helvetica", "normal");
 			doc.text(doc.splitTextToSize(oGp.Remarks || "NIL", contentWidth - 33), margin + 31, remY + 5);
 
-			// ── PURPOSE ROW ──────────────────────────────────────────────────────
-			var purY = remY + remH + 1, purH = 8;
-			doc.setLineWidth(0.25);
-			doc.rect(margin, purY, contentWidth, purH);
-			doc.line(margin + 28, purY, margin + 28, purY + purH);
-			doc.setFont("helvetica", "bold"); doc.setFontSize(8);
-			doc.text("Purpose:", margin + 3, purY + 5);
-			doc.setFont("helvetica", "normal");
-			doc.text("...............................................................................................................................", margin + 31, purY + 5);
-
-			// ── META INFO ROW ─────────────────────────────────────────────────────
-			var metaY = purY + purH + 3;
-			doc.setFontSize(8);
-			doc.setFont("helvetica", "bold"); doc.text("Req. No:", margin, metaY);
-			doc.setFont("helvetica", "normal"); doc.text(oGp.GatePassReqNo || "Draft", margin + 18, metaY);
-			doc.setFont("helvetica", "bold"); doc.text("PO Number:", margin + 70, metaY);
-			doc.setFont("helvetica", "normal"); doc.text(oGp.PurchaseOrder || "N/A", margin + 90, metaY);
-			doc.setFont("helvetica", "bold"); doc.text("Mode:", margin + 150, metaY);
-			doc.setFont("helvetica", "normal"); doc.text(oGp.ModeOfDispatch || "Road", margin + 172, metaY);
-			metaY += 5;
-			doc.setFont("helvetica", "bold"); doc.text("Status:", margin, metaY);
-			doc.setFont("helvetica", "normal"); doc.text(oGp.Status || "Draft", margin + 24, metaY);
-			doc.setFont("helvetica", "bold"); doc.text("Inv No:", margin + 70, metaY);
-			doc.setFont("helvetica", "normal"); doc.text(oGp.CustomerInvoice || "N/A", margin + 84, metaY);
-			doc.setFont("helvetica", "bold"); doc.text("Vehicle No:", margin + 150, metaY);
-			doc.setFont("helvetica", "normal"); doc.text(oGp.VehicleNo || "N/A", margin + 172, metaY);
-
 			// ── SIGNATURE TABLE (grid format) ────────────────────────────────────
-			var sigStartY = metaY + 8;
+			var sigStartY = remY + remH + 6;
 			var sigLabels = [
 				"Initiator Sign\n& Date",
 				"HOD Sign\n& Date",
