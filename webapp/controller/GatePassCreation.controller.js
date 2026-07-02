@@ -131,6 +131,8 @@ sap.ui.define([
 			}
 			oGpModel.setProperty("/PurchaseOrder", oData.PurchaseOrder || "");
 			oGpModel.setProperty("/CustomerInvoice", oData.CustomerInvoice || "");
+			oGpModel.setProperty("/CustomerNo", oData.Customer || "");
+			oGpModel.setProperty("/CustomerName", oData.CustomerName || "");
 			oGpModel.setProperty("/HasPONumber", !!(oData.PurchaseOrder));
 			oGpModel.setProperty("/HasCustomerInvoice", !!(oData.CustomerInvoice));
 			oGpModel.setProperty("/VehicleNo", oData.VehicleNo || "");
@@ -194,6 +196,7 @@ sap.ui.define([
 					uom: it.UOM || "",
 					expectedReturnableDate: dExpected,
 					receivedQty: parseFloat(it.ReceivedQuantity || it.RecievedQuantity || 0),
+					balanceQty: parseFloat(it.BalanceQuantity || 0),
 					returnDate: dRet,
 					rate: parseFloat(it.ItemNetPrice || it.rate || 0),
 					amount: parseFloat(it.Totalvalue || it.amount || 0).toFixed(2)
@@ -1269,6 +1272,8 @@ sap.ui.define([
 					OutwardCategory: oGp.IsOutward ? (oGp.OutwardCategory || "") : "",
 					CustomerInvoice: oGp.CustomerInvoice || "",
 					Message:         "",
+					Customer:        oGp.CustomerNo || "",
+					CustomerName:    oGp.CustomerName || "",
 
 					ZRGPNRGPItmNav: {
 						results: (oGp.items || []).map(function (it, index) {
@@ -1295,8 +1300,9 @@ sap.ui.define([
 								Material:         it.material || "",
 								ItemDescription:  it.materialName || "",
 								UOM:              it.uom || "EA",
-								RecievedQuantity: sRecQty,
-								Quantity:         sQty,
+								RecievedQuantity: sRecQty ? parseFloat(sRecQty) : 0,
+								Quantity:         sQty ? parseFloat(sQty) : 0,
+								BalanceQuantity:  it.balanceQty ? parseFloat(it.balanceQty) : 0,
 								NoOfPackages:     it.noOfPacks ? String(it.noOfPacks) : "",
 								ReturnableDate:   fnFormatDate(it.expectedReturnableDate)
 							};
