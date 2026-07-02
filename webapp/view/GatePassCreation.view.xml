@@ -443,8 +443,6 @@
 
 									<Input
 										value="{gp>noOfPacks}"
-										type="Number"
-										textAlign="Right"
 										editable="{gp>/editable}"
 										class="gpmsTableInput"
 										placeholder="Packs..."/>
