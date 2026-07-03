@@ -1300,9 +1300,9 @@ sap.ui.define([
 								Material:         it.material || "",
 								ItemDescription:  it.materialName || "",
 								UOM:              it.uom || "EA",
-								RecievedQuantity: sRecQty ? parseFloat(sRecQty) : 0,
-								Quantity:         sQty ? parseFloat(sQty) : 0,
-								BalanceQuantity:  it.balanceQty ? parseFloat(it.balanceQty) : 0,
+								RecievedQuantity: sRecQty || "0.000",
+								Quantity:         sQty || "0.000",
+								BalanceQuantity:  it.balanceQty ? parseFloat(it.balanceQty).toFixed(3) : "0.000",
 								NoOfPackages:     it.noOfPacks ? String(it.noOfPacks) : "",
 								ReturnableDate:   fnFormatDate(it.expectedReturnableDate)
 							};
